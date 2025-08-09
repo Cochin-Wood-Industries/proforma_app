@@ -93,6 +93,11 @@
             #finalSection {
               min-height: 55mm;
             }
+            #termsBlock{
+              break-inside: avoid;
+              page-break-inside: avoid;
+            }
+
             .keep-with-next {
               break-after: avoid;
               page-break-after: avoid;
@@ -113,7 +118,14 @@
                 text-align: left !important;
                 display: block !important;
             }
-            footer { page-break-before: always; }
+            footer{
+              /* let it flow onto the same page when there's room */
+              page-break-before: auto !important;
+              /* don’t split the footer across pages */
+              break-inside: avoid;
+              page-break-inside: avoid;
+            }
+
             .customer-info {
                 display: flex;
                 flex-direction: row;
@@ -387,7 +399,7 @@
                     </div>
                 </div>
 
-                <div class="w-full md:w-7/12 border-l-4 border-secondary-accent pl-4 py-3 rounded-md">
+                <div id="termsBlock" class="w-full md:w-7/12 border-l-4 border-secondary-accent pl-4 py-3 rounded-md">
                     <strong class="block mb-2 text-sm font-bold text-primary-dark">Terms & Conditions:</strong>
                     <ul class="list-disc pl-4 mt-2 text-xs space-y-1">
                         <li>**Pricing:** Valid for 3 days from quote/proforma date.</li>
@@ -1089,3 +1101,4 @@
 
 </body>
 </html>
+
