@@ -345,10 +345,26 @@
                 </table>
             </div>
           
-            <div class="flex justify-between mt-16">
-                <div class="w-5/12 text-center border-t border-primary-dark pt-3 text-sm">Prepared By</div>
-                <div class="w-5/12 text-center border-t border-primary-dark pt-3 text-sm">Sales Manager</div>
+            <div class="flex justify-between mt-16 gap-8">
+              <!-- Prepared By -->
+              <div class="w-5/12 text-center">
+                <div id="preparedByName"
+                     contenteditable="true"
+                     class="text-base font-semibold mb-4"
+                     aria-label="Prepared By Name">Name</div>
+                <div class="border-t border-primary-dark pt-3 text-sm">Prepared By</div>
+              </div>
+            
+              <!-- Sales Manager -->
+              <div class="w-5/12 text-center">
+                <div id="salesManagerName"
+                     contenteditable="true"
+                     class="text-base font-semibold mb-4"
+                     aria-label="Sales Manager Name">Name</div>
+                <div class="border-t border-primary-dark pt-3 text-sm">Sales Manager</div>
+              </div>
             </div>
+
           </div>
 
         </main>
@@ -1052,3 +1068,4 @@
 
 </body>
 </html>
+
