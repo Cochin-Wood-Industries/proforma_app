@@ -487,6 +487,7 @@
             const copyBillingBtn = document.getElementById('copyBillingBtn');
             const messageBox = document.getElementById('message-box');
             const gstRateSelect = document.getElementById('gstRateSelect');
+            const invoiceNumberEl = document.getElementById('invoiceNumber');
             
             // Transportation
             const addTransportationBtn = document.getElementById('addTransportationBtn');
@@ -506,6 +507,23 @@
             // Set today's date
             const today = new Date().toISOString().split('T')[0];
             invoiceDate.value = today;
+
+            // --- Auto-generate PI No (daily increment) ---
+            function generatePiNo() {
+              const d = new Date();
+              const yyyy = d.getFullYear();
+              const mm = String(d.getMonth() + 1).padStart(2, '0');
+              const dd = String(d.getDate()).padStart(2, '0');
+              const yyyymmdd = `${yyyy}${mm}${dd}`;
+              const key = `piSeq-${yyyymmdd}`;
+              const next = (parseInt(localStorage.getItem(key) || '0', 10) + 1);
+              localStorage.setItem(key, String(next));
+              const seq = String(next).padStart(3, '0');
+              return `PI-${yyyymmdd}-${seq}`;
+            }
+            if (invoiceNumberEl && invoiceNumberEl.textContent.trim() === '') {
+              invoiceNumberEl.textContent = generatePiNo();
+            }
 
             const showMessage = (message, duration = 3000) => {
                 messageBox.textContent = message;
@@ -823,7 +841,11 @@
                         defaultOption.textContent = `Select ${feature}`;
                         selectElement.appendChild(defaultOption);
 
-                        Array.from(uniqueOptions).sort((a,b) => a-b).forEach(optionText => {
+                        Array.from(uniqueOptions).sort((a,b) => {
+                          const an = parseFloat(a), bn = parseFloat(b);
+                          if (!isNaN(an) && !isNaN(bn)) return an - bn; // numeric sort when possible
+                          return String(a).localeCompare(String(b)); // fallback string sort
+                        }).forEach(optionText => {
                             const option = document.createElement('option');
                             option.value = optionText;
                             option.textContent = optionText;
@@ -953,9 +975,8 @@
             });
 
             // States/Districts (unchanged)
-            const statesAndDistricts = { /* … your existing states data … (unchanged) … */ 
+            const statesAndDistricts = { 
                 "Andhra Pradesh": ["Anantapur","Chittoor","East Godavari","Guntur","Krishna","Kurnool","Prakasam","Srikakulam","Sri Potti Sriramulu Nellore","Visakhapatnam","Vizianagaram","West Godavari","Y.S.R. Kadapa"],
-                /* (rest of states list unchanged) */
                 "Puducherry": ["Karaikal","Mahe","Puducherry","Yanam"]
             };
             
@@ -1068,4 +1089,3 @@
 
 </body>
 </html>
-
