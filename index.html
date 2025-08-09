@@ -19,25 +19,12 @@
             display: inline-block; min-width: 50px; border-bottom: 1px dashed #c1d6e1;
             padding: 2px; outline: none; cursor: text; transition: all 0.2s;
         }
-        [contenteditable="true"]:hover, [contenteditable="true"]:focus { border-bottom-color: #0a5e5e; background-color: #f0f8ff; }
+        [contenteditable="true"]:hover, [contenteditable="true"]:focus { border-bottom-color: #004343; background-color: #f0f8ff; }
         input, select {
             border: 1px solid #c1d6e1; padding: 2px 4px; border-radius: 4px; outline: none;
             transition: all 0.2s;
         }
-        input:hover, select:hover, input:focus, select:focus { border-color: #0a5e5e; background-color: #f0f8ff; }
-       
-        /* Hide default dropdown arrow */
-        select {
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            background-image: url('data:image/svg+xml;utf8,<svg fill="%230a5e5e" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
-            background-repeat: no-repeat;
-            background-position: right 0.5rem center;
-            background-size: 1.5em 1.5em;
-        }
-       
-        /* Message box styling */
+        input:hover, select:hover, input:focus, select:focus { border-color: #004343; background-color: #f0f8ff; }
         .message-box {
             position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
             background-color: #004343; color: white; padding: 1rem 2rem; border-radius: 8px;
@@ -48,7 +35,7 @@
             0%, 100% { opacity: 0; transform: translateX(-50%) scale(0.9); }
             10%, 90% { opacity: 1; transform: translateX(-50%) scale(1); }
         }
-       
+        
         /* A4 Paper Optimization for printing */
         .invoice-container {
             width: 210mm; /* A4 width */
@@ -57,32 +44,40 @@
             padding: 20mm;
             box-shadow: none;
         }
-        .invoice-container, body { background-color: #ffffff; }
+        .invoice-container, body { background-color: white; }
 
-        /* Fix for state dropdown overflow */
-        .address-select {
-            max-width: calc(100% - 70px); /* Adjust based on label width */
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+        /* Table Layout for both screen and print */
+        .table-container table {
+            table-layout: fixed;
+            width: 100%;
         }
 
-        /* Enforce a page break before the terms and conditions section */
-        #terms-and-footer-page {
-            page-break-before: always;
-            padding-top: 20mm; /* Adjust padding for a clean start on the new page */
-            position: relative;
+        /* Screen-specific styling */
+        @media screen {
+            .customer-info {
+                display: flex;
+                flex-direction: column;
+            }
+            @media (min-width: 768px) {
+                .customer-info {
+                    flex-direction: row;
+                }
+            }
         }
 
         @media print {
             @page {
                 size: A4;
-                margin: 10mm;
+                margin: 34mm 10mm 10mm 10mm;
+            }
+            @page:first {
+              margin: 10mm 10mm 10mm 10mm;   /* first page */
             }
             body {
                 margin: 0;
                 font-size: 12px;
                 color: #000;
+                
             }
             .invoice-container {
                 width: 100%;
@@ -92,354 +87,355 @@
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
+            .print-keep-together {
+              break-inside: avoid;
+              page-break-inside: avoid;
+            }
+            #finalSection {
+              min-height: 55mm;
+            }
+            /* keep the last item stuck to whatever follows it */
+            .keep-with-next {
+              break-after: avoid;
+              page-break-after: avoid;
+            }
+            /* and prevent a break right before the summary starts */
+            #items-summary tr:first-child {
+              break-before: avoid;
+              page-break-before: avoid;
+            }
             .no-print, .add-remove-buttons { display: none !important; }
             .print-hide-if-empty.hidden-for-print { display: none !important; }
             [contenteditable="true"], input, select { border: none !important; background-color: transparent !important; padding: 0; }
             .delete-item-btn { display: none; }
-           
-            /* Hide dropdown arrows in print */
-            select {
-                -webkit-appearance: none;
-                -moz-appearance: none;
-                appearance: none;
-                background-image: none;
-            }
-            /* Adjust input and span padding for print */
-            .customer-info p > span, .customer-info input { padding: 0 !important; }
-
+            
             /* Keep table header on every page */
-            table { page-break-after: auto; }
             thead { display: table-header-group; }
-           
+            
             /* Prevent rows and footer from splitting across pages */
-            tr, tfoot, .footer-content { page-break-inside: avoid; }
-           
-            /* Fix QR code print size */
-            #qrcode { display: block !important; }
-            #qrcode img {
-                width: 100px !important;
-                height: 100px !important;
-            }
-
-            /* Ensure the footer section is full-page on print */
-            #terms-and-footer-page {
-                height: auto;
-                padding-top: 10mm;
-                padding-bottom: 10mm;
-            }
-            #thank-you-message-print {
+            tr, tfoot { page-break-inside: avoid; }
+            
+            /* Allow multiline content in particulars */
+            .item-particulars {
+                white-space: pre-wrap; /* Preserve whitespace and wrap */
+                word-wrap: break-word;
+                text-align: left !important;
                 display: block !important;
             }
-           
-            /* Vertically shorten the green border in print */
-            .bank-details-block, .terms-block {
-                height: auto; /* Allow height to be determined by content */
+            
+            /* Enforce page break before footer */
+            footer {
+                page-break-before: always;
+            }
+
+            /* Ensure customer info is side-by-side in print */
+            .customer-info {
                 display: flex;
-                flex-direction: column;
+                flex-direction: row;
+                justify-content: space-between;
+                gap: 16px;
             }
-            .bank-details-content, .terms-content {
-                flex-grow: 1; /* Allow content to grow, but border stays with content */
-                border-left-width: 4px;
-                border-color: #009a7b;
-            }
-           
-            /* Remove margins that cause extra spacing */
-            .bank-details-block, .terms-block {
-                margin-bottom: 0 !important;
-            }
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); display: flex;
+            justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-content {
+            background-color: white; padding: 2rem; border-radius: 8px;
+            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.2); width: 90%; max-width: 600px;
+            max-height: 90vh; overflow-y: auto;
         }
     </style>
     <script>
         tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'primary-dark': '#004343',
-                        'secondary-dark': '#0a5e5e',
-                        'primary-accent': '#009a7b',
-                        'secondary-accent': '#11c99d',
-                        'white-shade': '#ffffff',
-                    },
-                }
-            }
+            theme: { extend: { colors: { 'primary-dark': '#004343', 'secondary-accent': '#009a7b', 'light-accent': '#11c99d', 'dark-shade': '#0a5e5e' }}}
         }
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+    @media print {
+      .open-features-btn {
+        display: none !important;
+      }
+    }
+    </style>
+
+
 </head>
 <body class="bg-gray-50 text-gray-800 p-4">
     <div id="message-box" class="message-box"></div>
 
     <div class="invoice-container max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-2xl">
         <header class="flex flex-col md:flex-row justify-between items-start border-b-2 border-primary-dark pb-6 mb-6">
-            <div class="w-full md:w-1/2 mb-6 md:mb-0 flex items-center">
-                <img src="https://www.cochinwood.in/web/image/8821-587dfee3/logo.png" alt="Cochin Wood Industries Logo" class="w-20 h-20 object-contain mr-6" onerror="this.onerror=null;this.src='https://placehold.co/80x80/004343/ffffff?text=CWI';">
-                <div class="flex-grow">
-                    <h2 class="text-lg font-bold text-primary-dark">Cochin Wood Industries Private Limited</h2>
-                    <address class="text-xs text-secondary-dark leading-snug">
-                        <p>Thoppilan Building, 146/A, Thuruthy, Kuruppampady,<br>Ernakulam, Kerala – 683545, India</p>
-                        <p class="mt-1">Phone: <span class="font-semibold">+91 9567410175</span> | E-Mail: <span class="font-semibold">info@cochinwood.in</span></p>
-                        <p class="mt-1">GSTIN: <span class="font-semibold">32AAJCC9689H1Z5</span></p>
-                    </address>
+            <div class="w-full md:w-1/2 mb-6 md:mb-0">
+                <div class="flex items-center mb-2">
+                    <img src="https://www.cochinwood.in/web/image/8821-587dfee3/logo.png" alt="Cochin Wood Industries Logo" class="w-12 h-12 rounded-full object-cover shadow-md mr-4" onerror="this.onerror=null;this.src='https://placehold.co/48x48/004343/ffffff?text=CWI';">
+                    <h2 class="text-lg font-bold text-teal-600">Cochin Wood Industries Private Limited</h2>
                 </div>
+                <address class="text-xs text-dark-shade leading-snug pl-16">
+                    <p>Thoppilan Building, 146/A, Thuruthy, Kuruppampady,<br>Ernakulam, Kerala – 683545, India</p>
+                    <p class="mt-1">Phone: <span class="font-semibold">+91 9567410175</span> | E-Mail: <span class="font-semibold">info@cochinwood.in</span></p>
+                    <p class="mt-1">GSTIN: <span class="font-semibold">32AAJCC9689H1Z5</span></p>
+                </address>
             </div>
-           
-            <div class="flex flex-col items-start md:items-end w-full md:w-1/2 mt-6 md:mt-0">
+            
+            <div class="flex flex-col items-start md:items-end w-full md:w-1/2">
                 <h1 class="text-3xl font-extrabold text-primary-dark mb-4">PROFORMA INVOICE</h1>
-                <div class="w-full border-l-4 border-primary-accent pl-4 py-1 rounded-md text-sm">
-                    <div class="flex justify-between items-center mb-1"><strong class="font-bold text-primary-dark">P.I. No:</strong> <span id="invoiceNumber" contenteditable="true" class="text-right flex-grow font-semibold min-w-[120px]" aria-label="Proforma Invoice Number"></span></div>
-                    <div class="flex justify-between items-center mb-1"><strong class="font-bold text-primary-dark">Date:</strong> <input type="date" id="invoiceDate" class="w-auto text-right flex-grow text-xs"></div>
-                    <div class="flex justify-between items-center mb-1"><strong class="font-bold text-primary-dark">Valid Till:</strong> <input type="date" id="validTill" class="w-auto text-right flex-grow text-xs"></div>
-                    <div class="flex justify-between items-center"><strong class="font-bold text-primary-dark">Currency:</strong>
-                        <span id="currencyDisplay" class="w-auto text-xs bg-white text-right font-bold">INR (₹)</span>
+                <div class="w-full border-l-4 border-light-accent pl-4 py-3 rounded-md">
+                    <div class="flex justify-between items-center mb-1"><strong class="text-sm font-bold text-primary-dark mr-2">P.I. No:</strong> <span id="invoiceNumber" contenteditable="true" class="text-right flex-grow font-semibold min-w-[120px]" aria-label="Proforma Invoice Number"></span></div>
+                    <div class="flex justify-between items-center mb-1"><strong class="text-sm font-bold text-primary-dark mr-2">Date:</strong> <input type="date" id="invoiceDate" class="w-auto text-right flex-grow"></div>
+                    <div class="flex justify-between items-center mb-1"><strong class="text-sm font-bold text-primary-dark mr-2">Valid Till:</strong> <input type="date" id="validTill" class="w-auto text-right flex-grow"></div>
+                    <div class="flex justify-between items-center"><strong class="text-sm font-bold text-primary-dark mr-2">Currency:</strong>
+                        <span id="currencyDisplay" class="w-auto text-sm bg-white text-right font-bold">INR (₹)</span>
                     </div>
                 </div>
             </div>
         </header>
 
-        <section class="details-section mb-8 text-sm flex">
-            <div class="w-full md:w-5/12 pr-4 border-r-2 border-dashed border-secondary-dark">
-                <div class="customer-info w-full border-l-4 border-primary-accent pl-4 py-3 rounded-md">
+        <section class="details-section mb-8 text-sm">
+            <div class="customer-info w-full gap-4 space-y-6 md:space-y-0">
+                <div class="w-full md:w-1/3 border-l-4 border-secondary-accent pl-4 py-3 rounded-md ">
                     <strong class="block mb-2 text-base font-bold text-primary-dark">Customer Details:</strong>
                     <div class="space-y-1 text-xs">
-                        <p class="flex items-center space-x-2"><span>Name:</span><span id="clientName" contenteditable="true" class="font-semibold flex-grow" aria-label="Customer Name"></span></p>
-                        <p class="flex items-center space-x-2"><span>Company:</span><span id="clientCompany" contenteditable="true" class="font-semibold flex-grow" aria-label="Customer Company"></span></p>
-                        <p class="flex items-center space-x-2"><span>GSTIN:</span><span id="clientGSTIN" contenteditable="true" class="font-semibold flex-grow" aria-label="Customer GSTIN"></span></p>
+                        <p>Name: <span id="clientName" contenteditable="true" class="font-semibold" aria-label="Customer Name"></span></p>
+                        <p>Company: <span id="clientCompany" contenteditable="true" class="font-semibold" aria-label="Customer Company"></span></p>
+                        <p>GSTIN: <span id="clientGSTIN" contenteditable="true" class="font-semibold" aria-label="Customer GSTIN"></span></p>
                     </div>
                 </div>
-            </div>
-       
-            <div class="w-full md:w-7/12 flex pl-4">
-                <div class="w-full md:w-1/2 pr-4 border-r-2 border-dashed border-secondary-dark">
-                    <div class="billing-info w-full border-l-4 border-primary-accent pl-4 py-3 rounded-md">
-                        <strong class="block mb-2 text-base font-bold text-primary-dark">Billing Address:</strong>
-                        <div class="space-y-1 text-xs">
-                            <p class="flex items-center space-x-2"><span>Address:</span><span id="billingAddressLine" contenteditable="true" class="font-semibold flex-grow" aria-label="Billing Address"></span></p>
-                            <p class="flex items-center space-x-2"><span>District:</span>
-                                <select id="billingDistrictSelect" class="bg-transparent border-none p-0 inline-block w-auto font-semibold flex-grow address-select" disabled>
-                                    <option value="">Select District</option>
-                                </select>
-                            </p>
-                            <p class="flex items-center space-x-2"><span>State/UT:</span>
-                                <select id="billingStateSelect" class="bg-transparent border-none p-0 inline-block w-auto font-semibold flex-grow address-select">
-                                    <option value="">Select State/UT</option>
-                                </select>
-                            </p>
-                        </div>
+
+                <div class="w-full md:w-1/3 border-l-4 border-secondary-accent pl-4 py-3 rounded-md">
+                    <strong class="block mb-2 text-base font-bold text-primary-dark">Billing Address:</strong>
+                    <div class="space-y-1 text-xs">
+                        <p>Address: <span id="billingAddressLine" contenteditable="true" class="font-semibold" aria-label="Billing Address"></span></p>
+                        <p>District:
+                            <select id="billingDistrictSelect" class="bg-transparent border-none p-0 inline-block w-28 font-semibold" disabled>
+                                <option value="">Select District</option>
+                            </select>
+                        </p>
+                        <p>State/UT:
+                            <select id="billingStateSelect" class="bg-transparent border-none p-0 inline-block w-28 font-semibold">
+                                <option value="">Select State/UT</option>
+                            </select>
+                        </p>
                     </div>
                 </div>
-       
-                <div class="w-full md:w-1/2 pl-4 flex flex-col justify-start">
-                    <div class="shipping-info w-full border-l-4 border-primary-accent pl-4 py-3 rounded-md">
-                        <strong class="block mb-2 text-base font-bold text-primary-dark">Shipping Address:</strong>
-                        <div class="space-y-1 text-xs">
-                            <p class="flex items-center space-x-2"><span>Address:</span><span id="shippingAddressLine" contenteditable="true" class="font-semibold flex-grow" aria-label="Shipping Address"></span></p>
-                            <p class="flex items-center space-x-2"><span>District:</span>
-                                <select id="shippingDistrictSelect" class="bg-transparent border-none p-0 inline-block w-auto font-semibold flex-grow address-select" disabled>
-                                    <option value="">Select District</option>
-                                </select>
-                            </p>
-                            <p class="flex items-center space-x-2"><span>State/UT:</span>
-                                <select id="shippingStateSelect" class="bg-transparent border-none p-0 inline-block w-auto font-semibold flex-grow address-select">
-                                    <option value="">Select State/UT</option>
-                                </select>
-                            </p>
-                        </div>
+
+                <div class="w-full md:w-1/3 border-l-4 border-secondary-accent pl-4 py-3 rounded-md">
+                    <strong class="block mb-2 text-base font-bold text-primary-dark">Shipping Address:</strong>
+                    <div class="space-y-1 text-xs">
+                        <p>Address: <span id="shippingAddressLine" contenteditable="true" class="font-semibold" aria-label="Shipping Address"></span></p>
+                        <p>District:
+                            <select id="shippingDistrictSelect" class="bg-transparent border-none p-0 inline-block w-28 font-semibold" disabled>
+                                <option value="">Select District</option>
+                            </select>
+                        </p>
+                        <p>State/UT:
+                            <select id="shippingStateSelect" class="bg-transparent border-none p-0 inline-block w-28 font-semibold">
+                                <option value="">Select State/UT</option>
+                            </select>
+                        </p>
                     </div>
-                    <div class="flex justify-start mt-2 ml-4">
-                        <button id="copyAddressBtn" class="no-print bg-gray-200 text-gray-700 text-xs font-semibold py-1 px-2 rounded-md shadow-sm hover:bg-gray-300 transition-colors">
-                            Copy from Billing
-                        </button>
-                    </div>
+                    <button id="copyBillingBtn" class="mt-4 bg-gray-200 text-gray-700 font-medium py-1 px-3 rounded-lg text-xs hover:bg-gray-300 no-print">
+                        Copy from Billing
+                    </button>
                 </div>
             </div>
         </section>
 
         <main>
-            <table class="w-full border-collapse mb-6 bg-gray-50 text-sm rounded-lg overflow-hidden shadow-sm">
-                <thead class="bg-primary-dark text-white text-left">
-                    <tr>
-                        <th scope="col" class="py-3 px-2 font-bold w-[5%]">S.No</th>
-                        <th scope="col" class="py-3 px-2 font-bold w-[30%]">Particulars</th>
-                        <th scope="col" class="py-3 px-2 font-bold w-[10%]">Thk(mm)</th>
-                        <th scope="col" class="py-3 px-2 font-bold w-[10%]">Len(ft)</th>
-                        <th scope="col" class="py-3 px-2 font-bold w-[10%]">Brd(ft)</th>
-                        <th scope="col" class="py-3 px-2 font-bold w-[10%]">Qty(Sht)</th>
-                        <th scope="col" class="py-3 px-2 font-bold w-[10%]">Qty(SqFt)</th>
-                        <th scope="col" class="py-3 px-2 font-bold w-[10%]">Rate/SqFt</th>
-                        <th scope="col" class="py-3 px-2 font-bold w-[15%] text-right">Amount</th>
-                        <th scope="col" class="py-3 px-2 w-[5%] no-print"></th>
-                    </tr>
-                </thead>
-                <tbody id="invoiceItems">
-                    </tbody>
-                <tfoot>
-                    <tr class="no-print">
-                        <td colspan="10" class="pt-4 pb-2 text-right add-remove-buttons">
-                            <button id="addItemBtn" class="w-8 h-8 flex items-center justify-center bg-secondary-accent hover:bg-primary-dark text-white font-bold rounded-full shadow-md transition-transform hover:scale-110" aria-label="Add new item row">
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"></path></svg>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr class="bg-gray-100">
-                        <td colspan="8" class="text-right font-bold py-2 px-2">Subtotal</td>
-                        <td id="productSubtotal" class="text-right font-bold py-2 px-2">₹0.00</td>
-                        <td class="no-print"></td>
-                    </tr>
-                    <tr class="bg-gray-100">
-                        <td colspan="8" class="pt-2 pr-4 text-right">
-                            <span class="font-bold">GST</span>
-                            <select id="productGstSelect" class="bg-transparent border border-gray-300 rounded-md p-1 ml-2 no-print">
-                                <option value="0.001">Supply to Merchant Exporter (0.1%)</option>
-                                <option value="0.05">5%</option>
-                                <option value="0.12">12%</option>
-                                <option value="0.18" selected>18%</option>
-                                <option value="0.28">28%</option>
-                            </select>
-                        </td>
-                        <td id="productTax" class="text-right font-bold py-2 px-2">₹0.00</td>
-                        <td class="no-print"></td>
-                    </tr>
-                </tfoot>
-            </table>
-
-            <div id="transportationContainer" hidden>
-                <table class="w-full border-collapse mb-6 bg-gray-50 text-sm rounded-lg overflow-hidden shadow-sm" id="transportation-table">
+            <div class="table-container">
+                <table class="w-full border-collapse mb-6 bg-gray-50 text-sm rounded-lg overflow-hidden shadow-sm">
                     <thead class="bg-primary-dark text-white text-left">
+                      
                         <tr>
-                            <th scope="col" class="py-3 px-2 font-bold w-[5%]">Sl No.</th>
-                            <th scope="col" class="py-3 px-2 font-bold w-[30%]">Destination</th>
-                            <th scope="col" class="py-3 px-2 font-bold w-[15%]">Distance(km)</th>
-                            <th scope="col" class="py-3 px-2 font-bold w-[15%]">Weight(Tonne)</th>
-                            <th scope="col" class="py-3 px-2 font-bold w-[15%]">Rate/Tonne</th>
-                            <th scope="col" class="py-3 px-2 font-bold w-[15%] text-right">Amount</th>
-                            <th scope="col" class="py-3 px-2 w-[5%] no-print"></th>
+                            <th scope="col" class="py-3 px-2" style="width: 6%;">S.No</th>
+                            <th scope="col" class="py-3 px-2" style="width: 30%;">Particulars</th>
+                            <th scope="col" class="py-3 px-2" style="width: 8%;">Thk<br>(mm)</th>
+                            <th scope="col" class="py-3 px-2" style="width: 7%;">Len<br>(ft)</th>
+                            <th scope="col" class="py-3 px-2" style="width: 7%;">Brd<br>(ft)</th>
+                            <th scope="col" class="py-3 px-2" style="width: 9%;">Qty<br>(Sht)</th>
+                            <th scope="col" class="py-3 px-2" style="width: 10%;">Qty<br>(SqFt)</th>
+                            <th scope="col" class="py-3 px-2" style="width: 10%;">Rate/<br>SqFt</th>
+                            <th scope="col" class="py-3 px-2 text-right" style="width: 12%;">Amount</th>
+                            <th scope="col" class="py-3 px-2 no-print" style="width: 5%;"></th>
                         </tr>
                     </thead>
-                    <tbody id="transportationItems">
+                    <tbody id="invoiceItems">
+                    </tbody>
+                    <tbody>
+                        <tr class="font-bold">
+                            <td colspan="8" class="border-t pt-4 pr-4 text-right">Subtotal</td>
+                            <td id="subtotalAmount" class="border-t pt-4 pr-2 text-right">₹0.00</td>
+                            <td class="border-t pt-4 no-print"></td>
+                        </tr>
+                        <tr class="font-bold">
+                            <td colspan="8" class="pt-2 pr-4 text-right">
+                                <div class="flex justify-end items-center space-x-2">
+                                    <span>GST</span>
+                                    <select id="gstRateSelect" class="w-auto text-sm bg-gray-50 border border-gray-300 rounded-md p-1">
+                                        <option value="0.001">Supply to Merchant Exporter (0.1%)</option>
+                                        <option value="0.05">5%</option>
+                                        <option value="0.12">12%</option>
+                                        <option value="0.18" selected>18%</option>
+                                        <option value="0.28">28%</option>
+                                    </select>
+                                </div>
+                            </td>
+                            <td id="taxAmount" class="pt-2 pr-2 text-right">₹0.00</td>
+                            <td class="pt-2 no-print"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <button id="addTransportationBtn" class="bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg text-sm hover:bg-gray-300 no-print mb-6">
+                Add Transportation
+            </button>
+
+            <div id="transportationSection" class="hidden">
+                <div class="table-container mt-8">
+                    <table class="w-full border-collapse mb-6 bg-gray-50 text-sm rounded-lg overflow-hidden shadow-sm">
+                        <thead class="bg-primary-dark text-white text-left">
+                            <tr>
+                                <th scope="col" class="py-3 px-2" style="width: 6%;">S.No</th>
+                                <th scope="col" class="py-3 px-2" style="width: 20%;">Destination</th>
+                                <th scope="col" class="py-3 px-2" style="width: 15%;">Distance(km)</th>
+                                <th scope="col" class="py-3 px-2" style="width: 15%;">Weight(Tonne)</th>
+                                <th scope="col" class="py-3 px-2" style="width: 15%;">Rate/Tonne</th>
+                                <th scope="col" class="py-3 px-2 text-right" style="width: 20%;">Amount</th>
+                                <th scope="col" class="py-3 px-2 no-print" style="width: 9%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="transportationItems">
                         </tbody>
+                        <tfoot>
+                            <tr class="font-bold">
+                                <td colspan="5" class="border-t pt-4 pr-4 text-right">Subtotal</td>
+                                <td id="transportationSubtotalAmount" class="border-t pt-4 pr-2 text-right">₹0.00</td>
+                                <td class="border-t pt-4 no-print"></td>
+                            </tr>
+                            <tr class="font-bold">
+                                <td colspan="5" class="pt-2 pr-4 text-right">
+                                    <div class="flex justify-end items-center space-x-2">
+                                        <span>GST</span>
+                                        <select id="transportationGstRateSelect" class="w-auto text-sm bg-gray-50 border border-gray-300 rounded-md p-1">
+                                            <option value="0.05" selected>5%</option>
+                                            <option value="0.12">12%</option>
+                                            <option value="0.18">18%</option>
+                                            <option value="0.28">28%</option>
+                                        </select>
+                                    </div>
+                                </td>
+                                <td id="transportationTaxAmount" class="pt-2 pr-2 text-right">₹0.00</td>
+                                <td class="pt-2 no-print"></td>
+                            </tr>
+                            <tr class="no-print">
+                                <td colspan="7" class="pt-4 pb-2 text-right add-remove-buttons">
+                                    <button id="addTransportationItemBtn" class="w-8 h-8 flex items-center justify-center bg-secondary-accent hover:bg-dark-shade text-white font-bold rounded-full shadow-md transition-transform hover:scale-110" aria-label="Add new transportation row">
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"></path></svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            
+          <div id="finalSection" class="print-keep-together">
+
+            <div class="table-container">
+                <table class="w-full border-collapse mb-6 bg-gray-50 text-sm rounded-lg overflow-hidden shadow-sm">
                     <tfoot>
-                         <tr class="no-print">
-                            <td colspan="7" class="pt-4 pb-2 text-right add-remove-buttons">
-                                <button id="addTransportationItemBtn" class="w-8 h-8 flex items-center justify-center bg-secondary-accent hover:bg-primary-dark text-white font-bold rounded-full shadow-md transition-transform hover:scale-110" aria-label="Add new item row">
+                        <tr class="text-lg font-extrabold">
+                            <td colspan="8" class="border-t-2 border-primary-dark pt-4 pr-2 text-right">Grand Total</td>
+                            <td id="grandTotalAmount" class="border-t-2 border-primary-dark pt-4 pr-2 text-right">₹0.00</td>
+                            <td class="border-t-2 border-primary-dark pt-4 no-print"></td>
+                        </tr>
+                        <tr class="no-print">
+                            <td colspan="10" class="pt-4 pb-2 text-right add-remove-buttons">
+                                <button id="addItemBtn" class="w-8 h-8 flex items-center justify-center bg-secondary-accent hover:bg-dark-shade text-white font-bold rounded-full shadow-md transition-transform hover:scale-110" aria-label="Add new item row">
                                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"></path></svg>
-                            </button>
+                                </button>
                             </td>
-                        </tr>
-                        <tr class="bg-gray-100">
-                            <td colspan="5" class="text-right font-bold py-2 px-2">Subtotal</td>
-                            <td id="transportationSubtotal" class="text-right font-bold py-2 px-2">₹0.00</td>
-                            <td class="no-print"></td>
-                        </tr>
-                        <tr class="bg-gray-100">
-                            <td colspan="5" class="pt-2 pr-4 text-right">
-                                <span class="font-bold">GST</span>
-                                <select id="transportationGstSelect" class="bg-transparent border border-gray-300 rounded-md p-1 ml-2 no-print">
-                                    <option value="0.001">Supply to Merchant Exporter (0.1%)</option>
-                                    <option value="0.05">5%</option>
-                                    <option value="0.12">12%</option>
-                                    <option value="0.18" selected>18%</option>
-                                    <option value="0.28">28%</option>
-                                </select>
-                            </td>
-                            <td id="transportationTax" class="text-right font-bold py-2 px-2">₹0.00</td>
-                            <td class="no-print"></td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
+          
+            <div class="flex justify-between mt-16">
+                <div class="w-5/12 text-center border-t border-primary-dark pt-3 text-sm">Prepared By</div>
+                <div class="w-5/12 text-center border-t border-primary-dark pt-3 text-sm">Sales Manager</div>
+            </div>
+          </div>
 
-            <div class="no-print mt-6 text-left">
-                <button id="showTransportationBtn" class="bg-gray-200 text-gray-700 text-sm font-semibold py-1 px-3 rounded-md shadow-sm hover:bg-gray-300 transition-colors">
-                    Add Transportation
-                </button>
-            </div>
-           
-            <div class="flex justify-end mt-8">
-                <div class="w-full md:w-1/2">
-                    <table class="w-full text-sm">
-                        <tr class="text-lg font-extrabold">
-                            <td class="border-t-2 border-primary-dark pt-4 pr-4 text-right">Grand Total</td>
-                            <td id="grandTotalAmount" class="border-t-2 border-primary-dark pt-4 pr-2 text-right">₹0.00</td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
         </main>
-       
-        <div class="signatures-below-table mt-8 flex justify-between">
-            <div class="w-5/12 text-center pt-3 text-sm">
-                Prepared by<br>
-                <span id="preparedBy" contenteditable="true" class="font-bold border-t border-primary-dark pt-2 block min-w-[100px] mt-2" aria-label="Prepared by name"></span>
-            </div>
-            <div class="w-5/12 text-center pt-3 text-sm">
-                Sales Manager<br>
-                <span id="salesManager" contenteditable="true" class="font-bold border-t border-primary-dark pt-2 block min-w-[100px] mt-2" aria-label="Sales Manager name"></span>
-            </div>
-        </div>
-
-        <div id="terms-and-footer-page" class="w-full flex flex-col justify-start">
-            <div class="flex flex-col md:flex-row flex-grow justify-between gap-8">
-                <div class="w-full md:w-1/3 flex flex-col justify-start bank-details-block">
-                    <div class="border-l-4 border-primary-accent pl-4 py-3 rounded-md bank-details-content">
-                        <strong class="block mb-4 text-base font-bold text-primary-dark">Bank Details:</strong>
-                        <address class="text-xs leading-relaxed space-y-1">
-                            <p><span class="font-semibold">A/C Name:</span> <span class="font-semibold">Cochin Wood Industries Pvt Ltd</span></p>
-                            <p><span class="font-semibold">A/C No:</span> <span class="font-semibold">074305002785</span></p>
-                            <p><span class="font-semibold">Bank:</span> <span class="font-semibold">ICICI Bank, Perumbavoor</span></p>
-                            <p><span class="font-semibold">IFSC:</span> <span class="font-semibold">ICIC0000743</span></p>
-                        </address>
-                        <div class="mt-4 flex flex-col items-center">
-                           <p class="text-sm break-all text-center"><strong>UPI ID:</strong><br><span class="font-bold">cochinwoodindustriesprivatelimited.ibz@icici</span></p>
-                           <div id="qrcode" class="w-28 h-28 no-print self-center mt-2"></div>
-                           <p class="text-sm font-semibold mt-1">Scan & Pay</p>
-                        </div>
+        
+        <footer class="mt-8">
+            <div class="flex flex-col md:flex-row justify-between">
+                <div class="w-full md:w-4/12 border-l-4 border-secondary-accent pl-4 py-3 rounded-md mb-6 md:mb-0">
+                    <strong class="block mb-2 text-sm font-bold text-primary-dark">Bank Details:</strong>
+                    <address class="text-xs leading-snug">
+                        <p>A/C Name: <span class="font-semibold">Cochin Wood Industries Pvt Ltd</span></p>
+                        <p>A/C No: <span class="font-semibold">074305002785</span></p>
+                        <p>Bank: <span class="font-semibold">ICICI Bank, Perumbavoor</span></p>
+                        <p>IFSC: <span class="font-semibold">ICIC0000743</span></p>
+                    </address>
+                    <div class="flex flex-col items-center mt-4 text-center">
+                        <strong class="block mb-1 text-sm font-bold text-primary-dark">UPI ID:</strong>
+                        <p class="text-xs font-semibold">cochinwoodindustriesprivatelimited.ibz<br>@icici</p>
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=upi://pay?pa=cochinwoodindustriesprivatelimited.ibz@icici" alt="UPI QR Code" class="w-24 h-24 mt-2">
+                        <p class="text-xs font-semibold mt-1">Scan & Pay</p>
                     </div>
                 </div>
 
-                <div class="w-full md:w-2/3 terms-block">
-                    <div class="border-l-4 border-primary-accent pl-4 py-3 rounded-md terms-content">
-                        <strong class="block mb-4 text-base font-bold text-primary-dark">Terms & Conditions:</strong>
-                        <ol class="list-decimal pl-4 mt-2 text-xs space-y-1 leading-normal terms-list">
-                            <li><b>Price Validity</b>: This proforma invoice is valid for 15 days from the invoice date.</li>
-                            <li><b>Payment Terms</b>: A 50% advance payment is required upon order confirmation. The remaining balance is due prior to dispatch.</li>
-                            <li><b>Delivery & Shipping</b>: Delivery is estimated at 7-15 days. Shipping charges are extra and the risk of loss or damage transfers to the buyer upon handover to the transporter.</li>
-                            <li><b>Quality & Inspection</b>: Goods must be inspected upon receipt. Any defects or discrepancies should be reported within 5 days.</li>
-                            <li><b>Warranty</b>: Our products are covered by a point of sale warranty.</li>
-                            <li><b>Limitation of Liability</b>: Our liability is limited to the value of the goods purchased. We are not liable for any indirect or consequential damages.</li>
-                            <li><b>Confidentiality</b>: All information related to this transaction is to be kept confidential.</li>
-                            <li><b>Loading Tolerance</b>: A loading tolerance of +/-5% is applicable.</li>
-                            <li><b>Jurisdiction</b>: This invoice is governed by Indian laws. Any disputes shall be subject to the exclusive jurisdiction of the courts in Perumbavoor.</li>
-                            <li><b>Force Majeure</b>: We are not responsible for delays caused by unforeseen events, including but not limited to natural disasters, pandemics, or government actions.</li>
-                            <li id="orderSpecificTandC_li" class="print-hide-if-empty"><b>Order-Specific Terms</b>: <span id="orderSpecificTandC" contenteditable="true" class="font-semibold" aria-label="Order specific terms and conditions">N/A</span></li>
-                        </ol>
-                        <div class="mt-2">
-                            <strong class="block mb-2 text-sm font-bold text-primary-dark">Incoterms:</strong>
-                            <select id="incoterms" class="w-full text-xs bg-gray-50 border border-gray-300 rounded-md p-1">
-                                <option value="EXW" selected><strong>Ex Works (EXW)</strong></option>
-                                <option value="FCA">Free Carrier (FCA)</option>
-                                <option value="DAP">Delivered at Place (DAP)</option>
-                            </select>
-                        </div>
+                <div class="w-full md:w-7/12 border-l-4 border-secondary-accent pl-4 py-3 rounded-md">
+                    <strong class="block mb-2 text-sm font-bold text-primary-dark">Terms & Conditions:</strong>
+                    <ul class="list-disc pl-4 mt-2 text-xs space-y-1">
+                        <li>**Pricing:** Valid for 3 days from quote/proforma date.</li>
+                        <li>**Payment:** 50% advance on order acceptance; balance due post-production, pre-dispatch.</li>
+                        <li>**Delivery:** 7-15 days (estimated). Shipping charges apply. Shipping risk transfers upon transporter/carrier.</li>
+                        <li>**Inspection:** Quality inspection before loading. Report defects within 5 days of receipt.</li>
+                        <li>**Warranty:** Point of Sale warranty.</li>
+                        <li>**Liability:** No indirect damages. Liability limited to purchase amount.</li>
+                        <li>**Confidentiality:** Mutual confidentiality agreement.</li>
+                        <li>**Tolerance:** +/-5% loading tolerance.</li>
+                        <li>**Law:** Governed by Indian law. Disputes resolved in Perumbavoor Jurisdiction.</li>
+                        <li>**Force Majeure:** Not liable for delays due to uncontrollable events like natural disasters, pandemics, governmental actions, etc.</li>
+                        <li id="orderSpecificTandC_li" class="print-hide-if-empty">**Order Specific T&C:** <span id="orderSpecificTandC" contenteditable="true" class="font-semibold" aria-label="Order specific terms and conditions">N/A</span></li>
+                    </ul>
+                    <div class="mt-4">
+                        <strong class="block mb-2 text-sm font-bold text-primary-dark">Incoterms:</strong>
+                        <select id="incoterms" class="w-full text-xs bg-gray-50 border border-gray-300 rounded-md p-1">
+                            <option value="EXW" selected>Ex Works (EXW)</option>
+                            <option value="FCA">Free Carrier (FCA)</option>
+                            <option value="DAP">Delivered at Place (DAP)</option>
+                        </select>
                     </div>
                 </div>
             </div>
-            <div class="mt-8 pt-4 text-center border-t-2 border-primary-dark" id="thank-you-message-print">
-                <p class="text-lg font-bold text-primary-dark">Thank you for your business!</p>
+        </footer>
+    </div>
+    
+    <div id="productOptionsModal" class="modal hidden">
+        <div class="modal-content">
+            <h3 class="text-xl font-bold text-primary-dark mb-4">Select Product Features</h3>
+            <div id="productOptionsContent" class="space-y-4">
+                </div>
+            <div class="flex justify-end space-x-2 mt-6">
+                <button id="cancelModalBtn" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">Cancel</button>
+                <button id="saveModalBtn" class="bg-secondary-accent text-white px-4 py-2 rounded-lg hover:bg-dark-shade">Save</button>
             </div>
         </div>
     </div>
-   
+
     <datalist id="product-list">
-        <option value="Marine Plywood - BWP Grade"></option>
-        <option value="BWP Laminated Plywood"></option>
-        <option value="Commercial Plywood"></option>
-        <option value="Blockboard - BWR Grade"></option>
-        <option value="MDF Board"></option>
-        <option value="Particle Board"></option>
-    </datalist>
+        </datalist>
 
     <div class="no-print mt-6 text-center">
-        <button id="saveToSheetBtn" class="bg-secondary-accent text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-primary-dark transition-colors">
+        <button id="saveToSheetBtn" class="bg-secondary-accent text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-dark-shade transition-colors">
             Save to Google Sheet
         </button>
         <button id="printBtn" class="bg-gray-500 text-white font-bold py-2 px-4 ml-4 rounded-lg shadow-md hover:bg-gray-700 transition-colors" onclick="window.print();">
@@ -448,73 +444,45 @@
     </div>
 
     <script>
+        let productMasterData = []; // Store product data globally
+window.productMasterData = productMasterData;
+        let currentItemRow; // Keep track of the row being edited
+        let availableFeatures = []; // To store available features for the current product
+
         document.addEventListener('DOMContentLoaded', () => {
             const invoiceItems = document.getElementById('invoiceItems');
             const addItemBtn = document.getElementById('addItemBtn');
-            const transportationContainer = document.getElementById('transportationContainer');
-            const transportationItems = document.getElementById('transportationItems');
-            const showTransportationBtn = document.getElementById('showTransportationBtn');
-            const addTransportationItemBtn = document.getElementById('addTransportationItemBtn');
-           
-            const productSubtotalElem = document.getElementById('productSubtotal');
-            const productTaxElem = document.getElementById('productTax');
-            const transportationSubtotalElem = document.getElementById('transportationSubtotal');
-            const transportationTaxElem = document.getElementById('transportationTax');
-            const grandTotalAmountElem = document.getElementById('grandTotalAmount');
-            const productGstSelect = document.getElementById('productGstSelect');
-            const transportationGstSelect = document.getElementById('transportationGstSelect');
-           
-            const invoiceNumberSpan = document.getElementById('invoiceNumber');
-            const invoiceDateInput = document.getElementById('invoiceDate');
-            const validTillInput = document.getElementById('validTill');
-           
-            const billingAddressLine = document.getElementById('billingAddressLine');
+            const subtotalAmount = document.getElementById('subtotalAmount');
+            const taxAmount = document.getElementById('taxAmount');
+            const grandTotalAmount = document.getElementById('grandTotalAmount');
+            const invoiceDate = document.getElementById('invoiceDate');
             const billingStateSelect = document.getElementById('billingStateSelect');
             const billingDistrictSelect = document.getElementById('billingDistrictSelect');
-
-            const shippingAddressLine = document.getElementById('shippingAddressLine');
             const shippingStateSelect = document.getElementById('shippingStateSelect');
             const shippingDistrictSelect = document.getElementById('shippingDistrictSelect');
-            const copyAddressBtn = document.getElementById('copyAddressBtn');
-           
+            const copyBillingBtn = document.getElementById('copyBillingBtn');
             const messageBox = document.getElementById('message-box');
+            const gstRateSelect = document.getElementById('gstRateSelect');
+            
+            // New transportation elements
+            const addTransportationBtn = document.getElementById('addTransportationBtn');
+            const transportationSection = document.getElementById('transportationSection');
+            const addTransportationItemBtn = document.getElementById('addTransportationItemBtn');
+            const transportationItems = document.getElementById('transportationItems');
+            const transportationSubtotalAmount = document.getElementById('transportationSubtotalAmount');
+            const transportationTaxAmount = document.getElementById('transportationTaxAmount');
+            const transportationGstRateSelect = document.getElementById('transportationGstRateSelect');
 
-            // Function to pad a number with a leading zero if it's a single digit
-            const pad = (num) => (num < 10 ? '0' : '') + num;
+            // Modal elements
+            const productOptionsModal = document.getElementById('productOptionsModal');
+            const productOptionsContent = document.getElementById('productOptionsContent');
+            const saveModalBtn = document.getElementById('saveModalBtn');
+            const cancelModalBtn = document.getElementById('cancelModalBtn');
 
             // Set today's date
-            const today = new Date();
-            const d = today.getDate();
-            const m = today.getMonth() + 1; // Month is 0-indexed
-            const y = today.getFullYear();
-            const formattedDate = `${y}-${pad(m)}-${pad(d)}`;
-            invoiceDateInput.value = formattedDate;
+            const today = new Date().toISOString().split('T')[0];
+            invoiceDate.value = today;
 
-            // Set Valid Till date (15 days from today)
-            const validTillDate = new Date();
-            validTillDate.setDate(today.getDate() + 15);
-            const validD = validTillDate.getDate();
-            const validM = validTillDate.getMonth() + 1;
-            const validY = validTillDate.getFullYear();
-            const formattedValidTill = `${validY}-${pad(validM)}-${pad(validD)}`;
-            validTillInput.value = formattedValidTill;
-
-            // Generate PI Number (placeholder with current date)
-            const piNumber = `PI-CWI-${pad(d)}${pad(m)}${y.toString().substr(-2)}-001`;
-            invoiceNumberSpan.textContent = piNumber;
-
-            // Generate QR code for UPI ID
-            const upiId = 'cochinwoodindustriesprivatelimited.ibz@icici';
-            const qrCodeData = `upi://pay?pa=${upiId}&pn=Cochin%20Wood%20Industries%20Pvt%20Ltd&cu=INR`;
-            new QRCode(document.getElementById('qrcode'), {
-                text: qrCodeData,
-                width: 128,
-                height: 128,
-                colorDark : "#004343",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
-            });
-           
             const showMessage = (message, duration = 3000) => {
                 messageBox.textContent = message;
                 messageBox.style.display = 'block';
@@ -528,63 +496,71 @@
                 return `₹${parseFloat(amount).toFixed(2)}`;
             };
 
-            // Function to update all totals
+            // Function to update totals
             const updateTotals = () => {
-                const productGstRate = parseFloat(productGstSelect.value);
-                const transportationGstRate = parseFloat(transportationGstSelect.value);
-
-                // Product Totals
-                let productSubtotal = 0;
-                document.querySelectorAll('#invoiceItems .item-row').forEach(row => {
+                let subtotal = 0;
+                document.querySelectorAll('.item-row').forEach(row => {
                     const amountText = row.querySelector('.item-amount').textContent;
-                    productSubtotal += parseFloat(amountText) || 0;
+                    subtotal += parseFloat(amountText) || 0;
                 });
-                const productTax = productSubtotal * productGstRate;
-                productSubtotalElem.textContent = formatCurrency(productSubtotal);
-                productTaxElem.textContent = formatCurrency(productTax);
+                
+                const selectedGstRate = parseFloat(gstRateSelect.value);
+                const tax = subtotal * selectedGstRate;
 
-                // Transportation Totals
+                subtotalAmount.textContent = formatCurrency(subtotal);
+                taxAmount.textContent = formatCurrency(tax);
+
+                // Include transportation totals in the grand total
+                const transportationSubtotal = parseFloat(transportationSubtotalAmount.textContent.replace('₹', '')) || 0;
+                const transportationTax = parseFloat(transportationTaxAmount.textContent.replace('₹', '')) || 0;
+
+                const grandTotal = subtotal + tax + transportationSubtotal + transportationTax;
+                grandTotalAmount.textContent = formatCurrency(grandTotal);
+            };
+            
+            // Function to update transportation totals
+            const updateTransportationTotals = () => {
                 let transportationSubtotal = 0;
-                if (!transportationContainer.hidden) {
-                    document.querySelectorAll('#transportationItems .item-row').forEach(row => {
-                        const amountText = row.querySelector('.item-amount').textContent;
-                        transportationSubtotal += parseFloat(amountText) || 0;
-                    });
-                }
-                const transportationTax = transportationSubtotal * transportationGstRate;
-                transportationSubtotalElem.textContent = formatCurrency(transportationSubtotal);
-                transportationTaxElem.textContent = formatCurrency(transportationTax);
-               
-                // Grand Total
-                const grandTotal = productSubtotal + productTax + transportationSubtotal + transportationTax;
-                grandTotalAmountElem.textContent = formatCurrency(grandTotal);
+                document.querySelectorAll('.transportation-row').forEach(row => {
+                    const amountText = row.querySelector('.transportation-amount').textContent;
+                    transportationSubtotal += parseFloat(amountText) || 0;
+                });
+
+                const selectedGstRate = parseFloat(transportationGstRateSelect.value) || 0;
+                const transportationTax = transportationSubtotal * selectedGstRate;
+
+                transportationSubtotalAmount.textContent = formatCurrency(transportationSubtotal);
+                transportationTaxAmount.textContent = formatCurrency(transportationTax);
+
+                updateTotals(); // Call main updateTotals to recalculate grand total
             };
 
-            // Listen for changes in the GST dropdowns
-            productGstSelect.addEventListener('change', updateTotals);
-            transportationGstSelect.addEventListener('change', updateTotals);
-
-            // Function to create a new product item row
+            // Function to create a new item row
             const createItemRow = (sno) => {
                 const tr = document.createElement('tr');
                 tr.className = 'item-row text-center';
                 tr.innerHTML = `
-                    <td class="border-t py-2 px-2 text-left">${sno}</td>
-                    <td class="border-t py-2 px-2"><input type="text" list="product-list" class="item-particulars w-full bg-transparent border-none p-0" aria-label="Particulars"></td>
-                    <td class="border-t py-2 px-2"><input type="number" step="0.01" class="item-thk w-full bg-transparent border-none p-0 text-center"></td>
-                    <td class="border-t py-2 px-2"><input type="number" step="0.01" class="item-len w-full bg-transparent border-none p-0 text-center"></td>
-                    <td class="border-t py-2 px-2"><input type="number" step="0.01" class="item-brd w-full bg-transparent border-none p-0 text-center"></td>
-                    <td class="border-t py-2 px-2"><input type="number" step="1" class="item-qty w-full bg-transparent border-none p-0 text-center"></td>
-                    <td class="item-sqft border-t py-2 px-2 text-right">0.00</td>
-                    <td class="border-t py-2 px-2"><input type="number" step="0.01" class="item-rate w-full bg-transparent border-none p-0 text-center"></td>
-                    <td class="item-amount border-t py-2 px-2 text-right">0.00</td>
-                    <td class="border-t no-print text-center">
+                    <td class="border-t py-2 px-2 text-left" style="width: 6%;">${sno}</td>
+                    <td class="border-t py-2 px-2" style="width: 30%;">
+                        <div contenteditable="true" class="item-particulars w-full bg-transparent border-none p-0 text-left cursor-text" aria-label="Particulars" tabindex="0"></div>
+                        <input type="text" list="product-list" class="product-search-input w-full bg-transparent border-none p-0 text-left mt-1" aria-label="Product Search">
+<button type="button" class="open-features-btn hidden text-xs px-2 py-1 rounded ml-2 bg-[#008080] text-white hover:bg-[#006666] transition-colors" aria-label="Open feature selection">Features</button>
+                    </td>
+                    <td class="border-t py-2 px-2" style="width: 8%;"><input type="number" step="1" class="item-thk w-full bg-transparent border-none p-0 text-center"></td>
+                    <td class="border-t py-2 px-2" style="width: 7%;"><input type="number" step="1" class="item-len w-full bg-transparent border-none p-0 text-center"></td>
+                    <td class="border-t py-2 px-2" style="width: 7%;"><input type="number" step="1" class="item-brd w-full bg-transparent border-none p-0 text-center"></td>
+                    <td class="border-t py-2 px-2" style="width: 9%;"><input type="number" step="1" class="item-qty w-full bg-transparent border-none p-0 text-center"></td>
+                    <td class="item-sqft border-t py-2 px-2 text-right" style="width: 10%;">0.00</td>
+                    <td class="border-t py-2 px-2" style="width: 10%;"><input type="number" step="1" class="item-rate w-full bg-transparent border-none p-0 text-center"></td>
+                    <td class="item-amount border-t py-2 px-2 text-right" style="width: 12%;">0.00</td>
+                    <td class="border-t no-print text-center" style="width: 5%;">
                         <button class="remove-item-btn w-6 h-6 flex items-center justify-center text-white bg-red-500 hover:bg-red-700 rounded-full transition-colors" aria-label="Remove item">
                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
                         </button>
                     </td>
                 `;
 
+                // Add event listeners for dynamic calculations
                 const inputs = tr.querySelectorAll('.item-thk, .item-len, .item-brd, .item-qty, .item-rate');
                 inputs.forEach(input => {
                     input.addEventListener('input', () => {
@@ -594,119 +570,361 @@
                         const qty = parseFloat(tr.querySelector('.item-qty').value) || 0;
                         const rate = parseFloat(tr.querySelector('.item-rate').value) || 0;
 
-                        const sqft = len * brd * qty;
-                        const amount = sqft * rate;
-                       
-                        tr.querySelector('.item-sqft').textContent = sqft.toFixed(2);
-                        tr.querySelector('.item-amount').textContent = amount.toFixed(2);
+                        const sqft = (len * brd * qty).toFixed(2);
+                        const amount = (sqft * rate).toFixed(2);
+                        
+                        tr.querySelector('.item-sqft').textContent = sqft;
+                        tr.querySelector('.item-amount').textContent = amount;
                         updateTotals();
                     });
                 });
 
+                // Add remove button functionality
                 tr.querySelector('.remove-item-btn').addEventListener('click', () => {
                     if (invoiceItems.children.length > 1) {
                         tr.remove();
-                        updateSno('invoiceItems');
+                        updateSno();
                         updateTotals();
                     } else {
-                        showMessage("You must have at least one product item on the invoice.");
+                        showMessage("You must have at least one item on the invoice.");
                     }
                 });
+
+                // Add event listener for the particulars input to trigger the modal
+                tr.querySelector('.product-search-input').addEventListener('input', (event) => {
+                    const selectedName = event.target.value;
+                    const matchingProducts = productMasterData.filter(p => p['Product Name'] === selectedName);
+
+                    if (matchingProducts.length > 0) {
+                        currentItemRow = tr; // Store the current row
+                        showProductOptionsModal(matchingProducts);
+                    }
+
+                    // Toggle Features button visibility as user types
+                    const featuresBtnToggle = tr.querySelector('.open-features-btn');
+                    if (featuresBtnToggle) {
+                        featuresBtnToggle.classList.toggle('hidden', matchingProducts.length === 0);
+                    }
+                });
+    
+                // Also open modal when the datalist selection is committed
+                tr.querySelector('.product-search-input').addEventListener('change', (event) => {
+                    const selectedName = event.target.value;
+                    const matchingProducts = (window.productMasterData || productMasterData || []).filter(p => p['Product Name'] === selectedName);
+                    // Toggle visibility of the Features button
+                    const featuresBtnToggle = tr.querySelector('.open-features-btn');
+                    if (featuresBtnToggle) {
+                        featuresBtnToggle.classList.toggle('hidden', matchingProducts.length === 0);
+                    }
+                    if (matchingProducts.length > 0) {
+                        currentItemRow = tr;
+                        showProductOptionsModal(matchingProducts);
+                    }
+                });
+
+                // Add handler for the explicit "Features" button
+                const featuresBtn = tr.querySelector('.open-features-btn');
+                if (featuresBtn) {
+                    featuresBtn.addEventListener('click', () => {
+                        const selectedName = tr.querySelector('.product-search-input').value.trim();
+                        if (!selectedName) {
+                            (typeof showMessage === 'function' ? showMessage : alert)('Please select a product first.');
+                            return;
+                        }
+                        const data = (window.productMasterData || productMasterData || []);
+                        if (!Array.isArray(data) || data.length === 0) {
+                            (typeof showMessage === 'function' ? showMessage : alert)('Product list is still loading. Please try again in a moment.');
+                            return;
+                        }
+                        const matchingProducts = data.filter(p => p['Product Name'] === selectedName);
+                        if (matchingProducts.length > 0) {
+                            currentItemRow = tr;
+                            showProductOptionsModal(matchingProducts);
+                        } else {
+                            (typeof showMessage === 'function' ? showMessage : alert)('No exact match found. Please pick a product from the dropdown.');
+                        }
+                    });
+                }
+
+                
+                // Set initial display state for particulars and search input
+                tr.querySelector('.item-particulars').style.display = 'none';
+                tr.querySelector('.product-search-input').style.display = 'block';
 
                 return tr;
             };
 
-            // Function to create a new transportation item row
+            // Function to create a new transportation row
             const createTransportationRow = (sno) => {
                 const tr = document.createElement('tr');
-                tr.className = 'item-row text-center';
+                tr.className = 'transportation-row text-center';
                 tr.innerHTML = `
-                    <td class="border-t py-2 px-2 text-left">${sno}</td>
-                    <td class="border-t py-2 px-2"><input type="text" class="item-destination w-full bg-transparent border-none p-0" aria-label="Destination"></td>
-                    <td class="border-t py-2 px-2"><input type="number" step="0.01" class="item-distance w-full bg-transparent border-none p-0 text-center"></td>
-                    <td class="border-t py-2 px-2"><input type="number" step="0.01" class="item-weight w-full bg-transparent border-none p-0 text-center"></td>
-                    <td class="border-t py-2 px-2"><input type="number" step="0.01" class="item-rate w-full bg-transparent border-none p-0 text-center"></td>
-                    <td class="item-amount border-t py-2 px-2 text-right">0.00</td>
-                    <td class="border-t no-print text-center">
-                        <button class="remove-item-btn w-6 h-6 flex items-center justify-center text-white bg-red-500 hover:bg-red-700 rounded-full transition-colors" aria-label="Remove item">
+                    <td class="border-t py-2 px-2 text-left" style="width: 6%;">${sno}</td>
+                    <td class="border-t py-2 px-2" style="width: 20%;"><input type="text" class="transportation-destination w-full bg-transparent border-none p-0 text-left"></td>
+                    <td class="border-t py-2 px-2" style="width: 15%;"><input type="number" step="1" class="transportation-distance w-full bg-transparent border-none p-0 text-center"></td>
+                    <td class="border-t py-2 px-2" style="width: 15%;"><input type="number" step="0.01" class="transportation-weight w-full bg-transparent border-none p-0 text-center"></td>
+                    <td class="border-t py-2 px-2" style="width: 15%;"><input type="number" step="1" class="transportation-rate w-full bg-transparent border-none p-0 text-center"></td>
+                    <td class="transportation-amount border-t py-2 px-2 text-right" style="width: 20%;">0.00</td>
+                    <td class="border-t no-print text-center" style="width: 9%;">
+                        <button class="remove-transportation-btn w-6 h-6 flex items-center justify-center text-white bg-red-500 hover:bg-red-700 rounded-full transition-colors" aria-label="Remove transportation row">
                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
                         </button>
                     </td>
                 `;
 
-                const inputs = tr.querySelectorAll('.item-distance, .item-weight, .item-rate');
+                const inputs = tr.querySelectorAll('.transportation-distance, .transportation-weight, .transportation-rate');
                 inputs.forEach(input => {
                     input.addEventListener('input', () => {
-                        const distance = parseFloat(tr.querySelector('.item-distance').value) || 0;
-                        const weight = parseFloat(tr.querySelector('.item-weight').value) || 0;
-                        const rate = parseFloat(tr.querySelector('.item-rate').value) || 0;
-                       
-                        const amount = weight * rate;
-                       
-                        tr.querySelector('.item-amount').textContent = amount.toFixed(2);
-                        updateTotals();
+                        const distance = parseFloat(tr.querySelector('.transportation-distance').value) || 0;
+                        const weight = parseFloat(tr.querySelector('.transportation-weight').value) || 0;
+                        const rate = parseFloat(tr.querySelector('.transportation-rate').value) || 0;
+
+                        const amount = (weight * rate).toFixed(2);
+                        
+                        tr.querySelector('.transportation-amount').textContent = amount;
+                        updateTransportationTotals();
                     });
                 });
-
-                tr.querySelector('.remove-item-btn').addEventListener('click', () => {
-                    if (transportationItems.children.length > 1) {
-                        tr.remove();
-                        updateSno('transportationItems');
-                        updateTotals();
-                    } else {
-                        // If only one row is left, clicking remove hides the entire section and button
-                        transportationItems.innerHTML = '';
-                        transportationContainer.hidden = true;
-                        showTransportationBtn.style.display = 'block';
-                        updateTotals();
+                
+                tr.querySelector('.remove-transportation-btn').addEventListener('click', () => {
+                    tr.remove();
+                    updateTransportationSno();
+                    updateTransportationTotals();
+                    
+                    if (transportationItems.children.length === 0) {
+                        transportationSection.classList.add('hidden');
                     }
                 });
+
                 return tr;
             };
 
-            // Function to update serial numbers for a given table
-            const updateSno = (tableId) => {
-                const table = document.getElementById(tableId);
-                const rows = table.querySelectorAll('.item-row');
-                rows.forEach((row, index) => {
+            // Function to update serial numbers
+            const updateSno = () => {
+                document.querySelectorAll('.item-row').forEach((row, index) => {
+                    row.querySelector('td:first-child').textContent = index + 1;
+                });
+                // ✅ Make sure only the very last item sticks to the summary
+                rows.forEach(r => r.classList.remove('keep-with-next'));
+                if (rows.length) {
+                  rows[rows.length - 1].classList.add('keep-with-next');
+                }
+              
+            };
+            
+            // Function to update transportation serial numbers
+            const updateTransportationSno = () => {
+                document.querySelectorAll('.transportation-row').forEach((row, index) => {
                     row.querySelector('td:first-child').textContent = index + 1;
                 });
             };
 
-            // Add an initial empty row for products
-            const initialProductRow = createItemRow(1);
-            invoiceItems.appendChild(initialProductRow);
-           
-            // Event listener to show transportation section
-            showTransportationBtn.addEventListener('click', () => {
-                transportationContainer.hidden = false;
-                showTransportationBtn.style.display = 'none';
-                if (transportationItems.children.length === 0) {
-                    const initialTransportationRow = createTransportationRow(1);
-                    transportationItems.appendChild(initialTransportationRow);
-                }
-                updateTotals(); // Re-calculate totals to include transportation
-            });
-           
-            // Event listener for adding new product items
+            // Add an initial empty row
+            const initialRow = createItemRow(1);
+            invoiceItems.appendChild(initialRow);
+
+            // Event listener for adding new items
             addItemBtn.addEventListener('click', () => {
                 const newSno = invoiceItems.children.length + 1;
                 const newRow = createItemRow(newSno);
                 invoiceItems.appendChild(newRow);
-                updateSno('invoiceItems');
+                updateSno();
             });
-           
-            // Event listener for adding new transportation items
+
+            // Event listener for adding transportation section and a new row
+            addTransportationBtn.addEventListener('click', () => {
+                transportationSection.classList.remove('hidden');
+                addTransportationItemBtn.click(); // Add a row automatically
+            });
+
+            // Event listener for adding new transportation rows
             addTransportationItemBtn.addEventListener('click', () => {
                 const newSno = transportationItems.children.length + 1;
                 const newRow = createTransportationRow(newSno);
                 transportationItems.appendChild(newRow);
-                updateSno('transportationItems');
+                updateTransportationSno();
             });
+
+            // Event listener for main GST dropdown change
+            gstRateSelect.addEventListener('change', updateTotals);
+            
+            // Event listener for transportation GST dropdown change
+            transportationGstRateSelect.addEventListener('change', updateTransportationTotals);
+
 
             // Initial calculation
             updateTotals();
-           
+            updateTransportationTotals();
+
+
+            // Modal Logic
+            const showProductOptionsModal = (products) => {
+                productOptionsContent.innerHTML = ''; // Clear previous options
+                const featureOrder = ['Faceveneer', 'Thickness (mm)', 'Core Material', 'Glue', 'Weight/Board', 'Chemical Dipping', 'Film Face Color', 'Film Face GSM', 'Wire Mesh', 'Grade', 'Length (ft)', 'Breadth (ft)', 'Rate/SqFt'];
+                
+                availableFeatures = featureOrder.filter(feature => products.some(product => product[feature] && product[feature].toString().trim() !== ''));
+                
+                availableFeatures.forEach(feature => {
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center space-x-4';
+                    
+                    const label = document.createElement('label');
+                    label.className = 'font-semibold w-1/3';
+                    label.textContent = feature;
+                    div.appendChild(label);
+
+                    const select = document.createElement('select');
+                    select.className = 'w-2/3 p-2 border border-gray-300 rounded-md';
+                    select.name = feature.replace(/\s/g, '');
+                    select.setAttribute('data-feature-name', feature);
+                    
+                    div.appendChild(select);
+                    productOptionsContent.appendChild(div);
+                });
+                
+                // Add event listeners to each select to dynamically update the rate
+                productOptionsContent.querySelectorAll('select').forEach(select => {
+                    select.addEventListener('change', updateRateOnSelection);
+                });
+
+                updateOptions(products); // Initial population and auto-selection
+                productOptionsModal.classList.remove('hidden');
+            };
+
+            const updateOptions = (products) => {
+                availableFeatures.forEach(feature => {
+                    const selectElement = productOptionsContent.querySelector(`[data-feature-name="${feature}"]`);
+                    if (selectElement) {
+                        const uniqueOptions = new Set();
+                        products.forEach(product => {
+                            const value = product[feature];
+                            if (value && value.toString().trim() !== '') {
+                                uniqueOptions.add(value.toString().trim());
+                            }
+                        });
+
+                        const currentValue = selectElement.value;
+                        selectElement.innerHTML = '';
+                        const defaultOption = document.createElement('option');
+                        defaultOption.value = '';
+                        defaultOption.textContent = `Select ${feature}`;
+                        selectElement.appendChild(defaultOption);
+
+                        Array.from(uniqueOptions).sort((a,b) => a-b).forEach(optionText => {
+                            const option = document.createElement('option');
+                            option.value = optionText;
+                            option.textContent = optionText;
+                            selectElement.appendChild(option);
+                        });
+                        
+                        // Auto-select if there's only one unique option
+                        if (uniqueOptions.size === 1) {
+                            selectElement.value = Array.from(uniqueOptions)[0];
+                        } else {
+                            selectElement.value = currentValue;
+                        }
+                    }
+                });
+            };
+
+            const updateRateOnSelection = () => {
+                const selectedProductName = currentItemRow.querySelector('.product-search-input').value;
+                let filteredProducts = productMasterData.filter(p => p['Product Name'] === selectedProductName);
+                
+                // Filter products based on current selections
+                const selects = productOptionsContent.querySelectorAll('select');
+                selects.forEach(select => {
+                    const featureName = select.getAttribute('data-feature-name');
+                    const selectedValue = select.value;
+                    if (selectedValue) {
+                        filteredProducts = filteredProducts.filter(p => p[featureName] && p[featureName].toString() === selectedValue);
+                    }
+                });
+
+                // Update all dropdowns based on the new filtered list
+                updateOptions(filteredProducts);
+
+                const rateSelect = productOptionsContent.querySelector(`[data-feature-name="Rate/SqFt"]`);
+                
+                if (filteredProducts.length === 1) {
+                    const rate = filteredProducts[0]['Rate/SqFt'];
+                    const thk = filteredProducts[0]['Thickness (mm)'];
+                    const len = filteredProducts[0]['Length (ft)'];
+                    const brd = filteredProducts[0]['Breadth (ft)'];
+
+                    if (rate && currentItemRow.querySelector('.item-rate')) {
+                        currentItemRow.querySelector('.item-rate').value = rate.toString();
+                    }
+                    if (thk && currentItemRow.querySelector('.item-thk')) {
+                        currentItemRow.querySelector('.item-thk').value = thk.toString();
+                    }
+                    if (len && currentItemRow.querySelector('.item-len')) {
+                        currentItemRow.querySelector('.item-len').value = len.toString();
+                    }
+                    if (brd && currentItemRow.querySelector('.item-brd')) {
+                        currentItemRow.querySelector('.item-brd').value = brd.toString();
+                    }
+                } else if (filteredProducts.length === 0) {
+                    // No matching product found, clear the rate and thickness
+                    if (currentItemRow.querySelector('.item-rate')) {
+                        currentItemRow.querySelector('.item-rate').value = '';
+                    }
+                    if (currentItemRow.querySelector('.item-thk')) {
+                        currentItemRow.querySelector('.item-thk').value = '';
+                    }
+                }
+            };
+            
+            saveModalBtn.addEventListener('click', () => {
+                const particularsDiv = currentItemRow.querySelector('.item-particulars');
+                const productSearchInput = currentItemRow.querySelector('.product-search-input');
+                const thkInput = currentItemRow.querySelector('.item-thk');
+                const rateInput = currentItemRow.querySelector('.item-rate');
+                const lenInput = currentItemRow.querySelector('.item-len');
+                const brdInput = currentItemRow.querySelector('.item-brd');
+                
+                // Get selected values from the modal
+                const selectedFeatures = Array.from(productOptionsContent.querySelectorAll('select')).map(select => {
+                    return {
+                        name: select.getAttribute('data-feature-name'),
+                        value: select.value
+                    };
+                }).filter(f => f.value); // Filter out unselected options
+
+                // Find the specific product row that matches all selected features
+                const selectedProductName = productSearchInput.value;
+                const matchingProduct = productMasterData.find(p => {
+                    return p['Product Name'] === selectedProductName && selectedFeatures.every(f => p[f.name] && f.value.includes(p[f.name].toString()));
+                });
+                
+                if (matchingProduct) {
+                    // Update the fields in the invoice row
+                    thkInput.value = matchingProduct['Thickness (mm)'] || '';
+                    rateInput.value = matchingProduct['Rate/SqFt'] || '';
+                    lenInput.value = matchingProduct['Length (ft)'] || '';
+                    brdInput.value = matchingProduct['Breadth (ft)'] || '';
+                    
+                    // Create the multiline description excluding thickness and rate
+                    const descriptionLines = selectedFeatures
+                        .filter(f => f.name !== 'Thickness (mm)' && f.name !== 'Rate/SqFt')
+                        .map(f => `${f.name}: ${f.value}`);
+                    const updatedDescription = `${selectedProductName}<br>${descriptionLines.join('<br>')}`;
+                    particularsDiv.innerHTML = updatedDescription;
+
+                    // After updating the description, hide the search input and show the particulars div
+                    productSearchInput.style.display = 'none';
+                    particularsDiv.style.display = 'block';
+                } else {
+                    showMessage("Could not find a matching product for the selected options.");
+                }
+                
+                productOptionsModal.classList.add('hidden');
+            });
+
+            cancelModalBtn.addEventListener('click', () => {
+                productOptionsModal.classList.add('hidden');
+            });
+
             // State and District Data
             const statesAndDistricts = {
                 "Andhra Pradesh": ["Anantapur","Chittoor","East Godavari","Guntur","Krishna","Kurnool","Prakasam","Srikakulam","Sri Potti Sriramulu Nellore","Visakhapatnam","Vizianagaram","West Godavari","Y.S.R. Kadapa"],
@@ -720,7 +938,7 @@
                 "Himachal Pradesh": ["Bilaspur","Chamba","Hamirpur","Kangra","Kinnaur","Kullu","Lahaul and Spiti","Mandi","Shimla","Sirmaur","Solan","Una"],
                 "Jharkhand": ["Bokaro","Chatra","Deoghar","Dhanbad","Dumka","East Singhbhum","Garhwa","Giridih","Godda","Gumla","Hazaribagh","Jamtara","Khunti","Koderma","Latehar","Lohardaga","Pakur","Palamu","Ramgarh","Ranchi","Sahebganj","Seraikela Kharsawan","Simdega","West Singhbhum"],
                 "Karnataka": ["Bagalkot","Ballari","Belagavi","Bengaluru Rural","Bengaluru Urban","Bidar","Chamarajanagar","Chikkaballapur","Chikkamagaluru","Chitradurga","Dakshina Kannada","Davanagere","Dharwad","Gadag","Hassan","Haveri","Kalaburagi","Kodagu","Kolar","Koppal","Mandya","Mysuru","Raichur","Ramanagara","Shivamogga","Tumakuru","Udupi","Uttara Kannada","Vijayapura","Yadgir"],
-                "Kerala": ["Alappuzha","Ernakulam","Idukku","Kannur","Kasaragod","Kollam","Kottayam","Kozhikode","Malappuram","Palakkad","Pathanamthitta","Thiruvananthapuram","Thrissur","Wayanad"],
+                "Kerala": ["Alappuzha","Ernakulam","Idukki","Kannur","Kasaragod","Kollam","Kottayam","Kozhikode","Malappuram","Palakkad","Pathanamthitta","Thiruvananthapuram","Thrissur","Wayanad"],
                 "Madhya Pradesh": ["Agar Malwa","Alirajpur","Anuppur","Ashoknagar","Balaghat","Barwani","Betul","Bhind","Bhopal","Burhanpur","Chhatarpur","Chhindwara","Damoh","Datia","Dewas","Dhar","Dindori","Guna","Gwalior","Harda","Hoshangabad","Indore","Jabalpur","Jhabua","Katni","Khandwa","Khargone","Mandla","Mandsaur","Morena","Narsinghpur","Neemuch","Niwari","Panna","Raisen","Rajgarh","Ratlam","Rewa","Sagar","Satna","Sehore","Seoni","Shahdol","Shajapur","Sheopur","Shivpuri","Sidhi","Singrauli","Tikamgarh","Ujjain","Umaria","Vidisha"],
                 "Maharashtra": ["Ahmednagar","Akola","Amravati","Aurangabad","Beed","Bhandara","Buldhana","Chandrapur","Dhule","Gadchiroli","Gondia","Hingoli","Jalgaon","Jalna","Kolhapur","Latur","Mumbai City","Mumbai Suburban","Nagpur","Nanded","Nandurbar","Nashik","Osmanabad","Palghar","Parbhani","Pune","Raigad","Ratnagiri","Sangli","Satara","Sindhudurg","Solapur","Thane","Wardha","Washim","Yavatmal"],
                 "Manipur": ["Bishnupur","Chandel","Churachandpur","Imphal East","Imphal West","Jiribam","Kakching","Kamjong","Kangpokpi","Noney","Pherzawl","Senapati","Tamenglong","Tengnoupal","Thoubal","Ukhrul"],
@@ -746,9 +964,9 @@
                 "Lakshadweep": ["Lakshadweep"],
                 "Puducherry": ["Karaikal","Mahe","Puducherry","Yanam"]
             };
-
-            // Function to populate a state dropdown
-            const populateStates = (selectElement) => {
+            
+            // Populate states
+            const populateStateSelect = (selectElement) => {
                 for (const state in statesAndDistricts) {
                     const option = document.createElement('option');
                     option.value = state;
@@ -756,12 +974,15 @@
                     selectElement.appendChild(option);
                 }
             };
+            
+            populateStateSelect(billingStateSelect);
+            populateStateSelect(shippingStateSelect);
 
-            // Function to populate a district dropdown
-            const populateDistricts = (stateSelectElement, districtSelectElement) => {
-                const selectedState = stateSelectElement.value;
-                districtSelectElement.innerHTML = '<option value="">Select District</option>';
-                districtSelectElement.disabled = true;
+            // Handle state change
+            const handleStateChange = (stateSelect, districtSelect) => {
+                const selectedState = stateSelect.value;
+                districtSelect.innerHTML = '<option value="">Select District</option>';
+                districtSelect.disabled = true;
 
                 if (selectedState) {
                     const districts = statesAndDistricts[selectedState];
@@ -769,34 +990,97 @@
                         const option = document.createElement('option');
                         option.value = district;
                         option.textContent = district;
-                        districtSelectElement.appendChild(option);
+                        districtSelect.appendChild(option);
                     });
-                    districtSelectElement.disabled = false;
+                    districtSelect.disabled = false;
                 }
             };
-           
-            // Populate state dropdowns initially
-            populateStates(billingStateSelect);
-            populateStates(shippingStateSelect);
 
-            // Handle state changes for billing and shipping addresses
-            billingStateSelect.addEventListener('change', () => populateDistricts(billingStateSelect, billingDistrictSelect));
-            shippingStateSelect.addEventListener('change', () => populateDistricts(shippingStateSelect, shippingDistrictSelect));
-           
-            // Functionality for "Copy from Billing" button
-            copyAddressBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                // Copy values
-                shippingAddressLine.textContent = billingAddressLine.textContent;
-                shippingStateSelect.value = billingStateSelect.value;
-               
-                // Trigger district population for shipping address and select the copied district
-                populateDistricts(shippingStateSelect, shippingDistrictSelect);
-                setTimeout(() => { // Use a slight delay to ensure the options are populated
-                    shippingDistrictSelect.value = billingDistrictSelect.value;
-                }, 50);
+            billingStateSelect.addEventListener('change', () => handleStateChange(billingStateSelect, billingDistrictSelect));
+            shippingStateSelect.addEventListener('change', () => handleStateChange(shippingStateSelect, shippingDistrictSelect));
+            
+            // Copy billing address to shipping address
+            copyBillingBtn.addEventListener('click', () => {
+                const billingAddressLine = document.getElementById('billingAddressLine').textContent;
+                const billingState = billingStateSelect.value;
+                const billingDistrict = billingDistrictSelect.value;
+                
+                document.getElementById('shippingAddressLine').textContent = billingAddressLine;
+                
+                shippingStateSelect.value = billingState;
+                handleStateChange(shippingStateSelect, shippingDistrictSelect);
+                shippingDistrictSelect.value = billingDistrict;
             });
         });
     </script>
+    
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+<script>
+// CSV loader for GitHub Pages (no backend needed)
+(function(){
+  function handleProductData(products) {
+    // matches the original shape expected elsewhere in the page
+    if (!Array.isArray(window.productMasterData)) { window.productMasterData = []; }
+    // Mutate in place so any references stay valid
+    window.productMasterData.splice(0, window.productMasterData.length, ...products);
+    if (typeof productMasterData !== 'undefined' && Array.isArray(productMasterData)) {
+      productMasterData.splice(0, productMasterData.length, ...products);
+    }
+
+    // populate the datalist of unique product names
+    const uniqueProductNames = [...new Set(products.map(p => p['Product Name']))];
+    const dl = document.getElementById('product-list');
+    if (dl) {
+      dl.innerHTML = '';
+      uniqueProductNames.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        dl.appendChild(opt);
+      });
+    }
+  }
+
+  function handleError(error) {
+    console.error("Failed to load product data:", error);
+    const messageBox = document.getElementById('message-box');
+    if (messageBox) {
+      messageBox.textContent = "Error: " + (error && error.message ? error.message : String(error));
+      messageBox.style.display = 'block';
+      setTimeout(() => messageBox.style.display = 'none', 3000);
+    }
+  }
+
+  window.addEventListener('load', function(){
+    fetch('product_master.csv', { cache: 'no-store' })
+      .then(resp => {
+        if (!resp.ok) throw new Error("HTTP " + resp.status + " while fetching product_master.csv");
+        return resp.text();
+      })
+      .then(csvText => {
+        const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+        if (parsed.errors && parsed.errors.length) {
+          console.warn("CSV parse warnings/errors:", parsed.errors);
+        }
+        const rows = parsed.data.map(row => {
+          // Trim keys and values to match the original code's expectations
+          const obj = {};
+          Object.keys(row).forEach(k => {
+            const key = String(k || '').trim();
+            const val = row[k] != null ? String(row[k]).trim() : "";
+            obj[key] = val;
+          });
+          return obj;
+        });
+        handleProductData(rows);
+      })
+      .catch(handleError);
+  });
+})();
+</script>
+
 </body>
 </html>
+
+
