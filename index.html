@@ -50,6 +50,11 @@
         .table-container table {
             table-layout: fixed;
             width: 100%;
+        /* prevent header labels from squishing */
+        .table-container table th {
+            white-space: normal;
+            overflow-wrap: anywhere; /* lets it break on / and long tokens */
+        }
         }
 
         /* Screen-specific styling */
@@ -1101,4 +1106,5 @@
 
 </body>
 </html>
+
 
