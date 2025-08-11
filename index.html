@@ -51,7 +51,6 @@
             table-layout: fixed;
             width: 100%;
         }
-        /* prevent header labels from squishing */
         .table-container table th {
             white-space: normal;
             overflow-wrap: anywhere;
@@ -233,7 +232,7 @@
                 </table>
             </div>
 
-            <!-- NEW: Add Product (+) button ABOVE transportation -->
+            <!-- Add Product (+) above Transportation -->
             <div class="no-print mt-2 mb-6 text-right add-remove-buttons">
                 <button id="addItemBtn"
                         class="w-8 h-8 flex items-center justify-center bg-secondary-accent hover:bg-dark-shade text-white font-bold rounded-full shadow-md transition-transform hover:scale-110"
@@ -313,7 +312,6 @@
                             <td id="grandTotalAmount" class="border-t-2 border-primary-dark pt-4 pr-2 text-right">₹0.00</td>
                             <td class="border-t-2 border-primary-dark pt-4 no-print"></td>
                         </tr>
-                        <!-- removed old addItemBtn row from here -->
                     </tfoot>
                 </table>
             </div>
@@ -439,6 +437,7 @@
             const grandTotalAmount = document.getElementById('grandTotalAmount');
             const totalWeightAmount = document.getElementById('totalWeightAmount');
             const invoiceDate = document.getElementById('invoiceDate');
+            const validTill = document.getElementById('validTill');                 // <-- ADDED
             const billingStateSelect = document.getElementById('billingStateSelect');
             const billingDistrictSelect = document.getElementById('billingDistrictSelect');
             const shippingStateSelect = document.getElementById('shippingStateSelect');
@@ -448,6 +447,7 @@
             const gstRateSelect = document.getElementById('gstRateSelect');
             const invoiceNumberEl = document.getElementById('invoiceNumber');
             
+            // Transportation
             const addTransportationBtn = document.getElementById('addTransportationBtn');
             const transportationSection = document.getElementById('transportationSection');
             const addTransportationItemBtn = document.getElementById('addTransportationItemBtn');
@@ -456,14 +456,36 @@
             const transportationTaxAmount = document.getElementById('transportationTaxAmount');
             const transportationGstRateSelect = document.getElementById('transportationGstRateSelect');
 
+            // Modal
             const productOptionsModal = document.getElementById('productOptionsModal');
             const productOptionsContent = document.getElementById('productOptionsContent');
             const saveModalBtn = document.getElementById('saveModalBtn');
             const cancelModalBtn = document.getElementById('cancelModalBtn');
 
+            // --- Date helpers for Valid Till (+15 days) ---
+            function addDaysISO(iso, days) {
+              if (!iso) return '';
+              const d = new Date(iso);
+              d.setDate(d.getDate() + days);
+              const yyyy = d.getFullYear();
+              const mm = String(d.getMonth() + 1).padStart(2, '0');
+              const dd = String(d.getDate()).padStart(2, '0');
+              return `${yyyy}-${mm}-${dd}`;
+            }
+            function syncValidTillFromInvoiceDate() {
+              if (!invoiceDate.value) return;
+              validTill.value = addDaysISO(invoiceDate.value, 15);
+            }
+
+            // Set today's date and auto-fill Valid Till
             const today = new Date().toISOString().split('T')[0];
             invoiceDate.value = today;
+            syncValidTillFromInvoiceDate();                              // <-- ADDED
 
+            // When Date changes later, re-auto-fill Valid Till
+            invoiceDate.addEventListener('change', syncValidTillFromInvoiceDate); // <-- ADDED
+
+            // --- Auto-generate PI No (daily increment) ---
             function generatePiNo() {
               const d = new Date();
               const yyyy = d.getFullYear();
@@ -488,6 +510,7 @@
 
             const formatCurrency = (amount) => `₹${parseFloat(amount).toFixed(2)}`;
 
+            // === Totals ===
             const updateTotals = () => {
                 let subtotal = 0;
                 let totalWeight = 0;
@@ -691,6 +714,7 @@
                 });
             };
 
+            // Initial item row
             const initialRow = createItemRow(1);
             invoiceItems.appendChild(initialRow);
 
@@ -701,11 +725,9 @@
                 updateSno();
             });
 
-            // CHANGED: now this only reveals the section (no row auto-add)
+            // Transportation button only reveals section
             addTransportationBtn.addEventListener('click', () => {
                 transportationSection.classList.remove('hidden');
-                // Optional: scroll into view
-                // transportationSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
 
             addTransportationItemBtn.addEventListener('click', () => {
@@ -721,6 +743,7 @@
             updateTotals();
             updateTransportationTotals();
 
+            // === Modal Logic ===
             const showProductOptionsModal = (products) => {
                 productOptionsContent.innerHTML = '';
                 const featureOrder = ['Faceveneer', 'Thickness (mm)', 'Core Material', 'Glue', 'Weight/Board', 'Chemical Dipping', 'Film Face Color', 'Film Face GSM', 'Wire Mesh', 'Grade', 'Length (ft)', 'Breadth (ft)', 'Rate/SqFt'];
@@ -880,6 +903,7 @@
                 productOptionsModal.classList.add('hidden');
             });
 
+            // States/Districts (sample)
             const statesAndDistricts = { 
                 "Andhra Pradesh": ["Anantapur","Chittoor","East Godavari","Guntur","Krishna","Kurnool","Prakasam","Srikakulam","Sri Potti Sriramulu Nellore","Visakhapatnam","Vizianagaram","West Godavari","Y.S.R. Kadapa"],
                 "Puducherry": ["Karaikal","Mahe","Puducherry","Yanam"]
