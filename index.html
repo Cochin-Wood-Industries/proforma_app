@@ -470,7 +470,7 @@
               const yyyy = d.getFullYear();
               const mm = String(d.getMonth() + 1).padStart(2, '0');
               const dd = String(d.getDate()).padStart(2, '0');
-              return ${yyyy}-${mm}-${dd};
+              return `${yyyy}-${mm}-${dd}`;
             }
             function syncValidTillFromInvoiceDate() {
               if (!invoiceDate.value) return;
@@ -491,12 +491,12 @@
               const yyyy = d.getFullYear();
               const mm = String(d.getMonth() + 1).padStart(2, '0');
               const dd = String(d.getDate()).padStart(2, '0');
-              const yyyymmdd = ${yyyy}${mm}${dd};
-              const key = piSeq-${yyyymmdd};
+              const yyyymmdd = `${yyyy}${mm}${dd}`;
+              const key = `piSeq-${yyyymmdd}`;
               const next = (parseInt(localStorage.getItem(key) || '0', 10) + 1);
               localStorage.setItem(key, String(next));
               const seq = String(next).padStart(3, '0');
-              return PI-${yyyymmdd}-${seq};
+              return `PI-${yyyymmdd}-${seq}`;
             }
             if (invoiceNumberEl && invoiceNumberEl.textContent.trim() === '') {
               invoiceNumberEl.textContent = generatePiNo();
@@ -508,7 +508,7 @@
                 setTimeout(() => { messageBox.style.display = 'none'; }, duration);
             };
 
-            const formatCurrency = (amount) => ₹${parseFloat(amount).toFixed(2)};
+            const formatCurrency = (amount) => `₹${parseFloat(amount).toFixed(2)}`;
 
             // === Totals ===
             const updateTotals = () => {
@@ -562,7 +562,7 @@
             const createItemRow = (sno) => {
                 const tr = document.createElement('tr');
                 tr.className = 'item-row text-center';
-                tr.innerHTML = 
+                tr.innerHTML = `
                     <td class="border-t py-2 px-2 text-left" style="width: 6%;">${sno}</td>
                     <td class="border-t py-2 px-2" style="width: 30%;">
                         <div contenteditable="true" class="item-particulars w-full bg-transparent border-none p-0 text-left cursor-text" aria-label="Particulars" tabindex="0"></div>
@@ -581,7 +581,7 @@
                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
                         </button>
                     </td>
-                ;
+                `;
 
                 const inputs = tr.querySelectorAll('.item-thk, .item-len, .item-brd, .item-qty, .item-rate');
                 inputs.forEach(input => {
@@ -663,7 +663,7 @@
             const createTransportationRow = (sno) => {
                 const tr = document.createElement('tr');
                 tr.className = 'transportation-row text-center';
-                tr.innerHTML = 
+                tr.innerHTML = `
                     <td class="border-t py-2 px-2 text-left" style="width: 6%;">${sno}</td>
                     <td class="border-t py-2 px-2" style="width: 20%;"><input type="text" class="transportation-destination w-full bg-transparent border-none p-0 text-left"></td>
                     <td class="border-t py-2 px-2" style="width: 15%;"><input type="number" step="1" class="transportation-distance w-full bg-transparent border-none p-0 text-center"></td>
@@ -675,7 +675,7 @@
                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
                         </button>
                     </td>
-                ;
+                `;
 
                 const inputs = tr.querySelectorAll('.transportation-distance, .transportation-weight, .transportation-rate');
                 inputs.forEach(input => {
@@ -787,7 +787,7 @@
 
             const updateOptions = (products) => {
                 availableFeatures.forEach(feature => {
-                    const selectElement = productOptionsContent.querySelector([data-feature-name="${feature}"]);
+                    const selectElement = productOptionsContent.querySelector(`[data-feature-name="${feature}"]`);
                     if (selectElement) {
                         const uniqueOptions = new Set();
                         products.forEach(product => {
@@ -799,7 +799,7 @@
                         selectElement.innerHTML = '';
                         const defaultOption = document.createElement('option');
                         defaultOption.value = '';
-                        defaultOption.textContent = Select ${feature};
+                        defaultOption.textContent = `Select ${feature}`;
                         selectElement.appendChild(defaultOption);
 
                         Array.from(uniqueOptions).sort((a,b) => {
@@ -873,8 +873,8 @@
                     
                     const descriptionLines = selectedFeatures
                         .filter(f => f.name !== 'Thickness (mm)' && f.name !== 'Rate/SqFt')
-                        .map(f => ${f.name}: ${f.value});
-                    const updatedDescription = ${selectedProductName}<br>${descriptionLines.join('<br>')};
+                        .map(f => `${f.name}: ${f.value}`);
+                    const updatedDescription = `${selectedProductName}<br>${descriptionLines.join('<br>')}`;
                     particularsDiv.innerHTML = updatedDescription;
 
                     const fixedW = matchingProduct['Weight/Board'] ?? matchingProduct['Fixed_Weight_kg'] ?? matchingProduct['Weight_kg'];
