@@ -702,8 +702,17 @@
             });
 
             addTransportationBtn.addEventListener('click', () => {
+              // Only reveal the block; users will use the "+" to add rows
+              if (transportationSection.classList.contains('hidden')) {
                 transportationSection.classList.remove('hidden');
-                addTransportationItemBtn.click();
+            
+                // Optional: make the button look disabled after opening once
+                addTransportationBtn.textContent = 'Transportation';
+                addTransportationBtn.disabled = true;
+                addTransportationBtn.classList.add('opacity-60', 'cursor-not-allowed');
+              }
+            });
+
             });
 
             addTransportationItemBtn.addEventListener('click', () => {
@@ -990,3 +999,4 @@
 
 </body>
 </html>
+
