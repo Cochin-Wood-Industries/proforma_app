@@ -619,4 +619,374 @@
                     featuresBtn.addEventListener('click', () => {
                         const selectedName = tr.querySelector('.product-search-input').value.trim();
                         if (!selectedName) { showMessage('Please select a product first.'); return; }
-                        const data = (window.pr
+                        const data = (window.productMasterData || productMasterData || []);
+                        if (!Array.isArray(data) || data.length === 0) { showMessage('Product list is still loading. Please try again in a moment.'); return; }
+                        const matchingProducts = data.filter(p => p['Product Name'] === selectedName);
+                        if (matchingProducts.length > 0) {
+                            currentItemRow = tr;
+                            showProductOptionsModal(matchingProducts);
+                        } else {
+                            showMessage('No exact match found. Please pick a product from the dropdown.');
+                        }
+                    });
+                }
+
+                tr.querySelector('.item-particulars').style.display = 'none';
+                tr.querySelector('.product-search-input').style.display = 'block';
+
+                return tr;
+            };
+
+            const createTransportationRow = (sno) => {
+                const tr = document.createElement('tr');
+                tr.className = 'transportation-row text-center';
+                tr.innerHTML = `
+                    <td class="border-t py-2 px-2 text-left" style="width: 6%;">${sno}</td>
+                    <td class="border-t py-2 px-2" style="width: 20%;"><input type="text" class="transportation-destination w-full bg-transparent border-none p-0 text-left"></td>
+                    <td class="border-t py-2 px-2" style="width: 15%;"><input type="number" step="1" class="transportation-distance w-full bg-transparent border-none p-0 text-center"></td>
+                    <td class="border-t py-2 px-2" style="width: 15%;"><input type="number" step="0.01" class="transportation-weight w-full bg-transparent border-none p-0 text-center"></td>
+                    <td class="border-t py-2 px-2" style="width: 15%;"><input type="number" step="1" class="transportation-rate w-full bg-transparent border-none p-0 text-center"></td>
+                    <td class="transportation-amount border-t py-2 px-2 text-right" style="width: 20%;">0.00</td>
+                    <td class="border-t no-print text-center" style="width: 9%;">
+                        <button class="remove-transportation-btn w-6 h-6 flex items-center justify-center text-white bg-red-500 hover:bg-red-700 rounded-full transition-colors" aria-label="Remove transportation row">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
+                        </button>
+                    </td>
+                `;
+
+                const inputs = tr.querySelectorAll('.transportation-distance, .transportation-weight, .transportation-rate');
+                inputs.forEach(input => {
+                    input.addEventListener('input', () => {
+                        const weight = parseFloat(tr.querySelector('.transportation-weight').value) || 0;
+                        const rate = parseFloat(tr.querySelector('.transportation-rate').value) || 0;
+                        const amount = (weight * rate).toFixed(2);
+                        tr.querySelector('.transportation-amount').textContent = amount;
+                        updateTransportationTotals();
+                    });
+                });
+                
+                tr.querySelector('.remove-transportation-btn').addEventListener('click', () => {
+                    tr.remove();
+                    updateTransportationSno();
+                    updateTransportationTotals();
+                    
+                    if (transportationItems.children.length === 0) {
+                        transportationSection.classList.add('hidden');
+                    }
+                });
+
+                return tr;
+            };
+
+            const updateSno = () => {
+                const rows = document.querySelectorAll('.item-row');
+                rows.forEach((row, index) => { row.querySelector('td:first-child').textContent = index + 1; });
+                rows.forEach(r => r.classList.remove('keep-with-next'));
+                if (rows.length) { rows[rows.length - 1].classList.add('keep-with-next'); }
+            };
+            
+            const updateTransportationSno = () => {
+                document.querySelectorAll('.transportation-row').forEach((row, index) => {
+                    row.querySelector('td:first-child').textContent = index + 1;
+                });
+            };
+
+            const initialRow = createItemRow(1);
+            invoiceItems.appendChild(initialRow);
+
+            addItemBtn.addEventListener('click', () => {
+                const newSno = invoiceItems.children.length + 1;
+                const newRow = createItemRow(newSno);
+                invoiceItems.appendChild(newRow);
+                updateSno();
+            });
+
+            addTransportationBtn.addEventListener('click', () => {
+                transportationSection.classList.remove('hidden');
+                addTransportationItemBtn.click();
+            });
+
+            addTransportationItemBtn.addEventListener('click', () => {
+                const newSno = transportationItems.children.length + 1;
+                const newRow = createTransportationRow(newSno);
+                transportationItems.appendChild(newRow);
+                updateTransportationSno();
+            });
+
+            gstRateSelect.addEventListener('change', updateTotals);
+            transportationGstRateSelect.addEventListener('change', updateTransportationTotals);
+
+            updateTotals();
+            updateTransportationTotals();
+
+            const showProductOptionsModal = (products) => {
+                productOptionsContent.innerHTML = '';
+                const featureOrder = ['Faceveneer', 'Thickness (mm)', 'Core Material', 'Glue', 'Weight/Board', 'Chemical Dipping', 'Film Face Color', 'Film Face GSM', 'Wire Mesh', 'Grade', 'Length (ft)', 'Breadth (ft)', 'Rate/SqFt'];
+                
+                availableFeatures = featureOrder.filter(feature => products.some(product => product[feature] && product[feature].toString().trim() !== ''));
+                
+                availableFeatures.forEach(feature => {
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center space-x-4';
+                    
+                    const label = document.createElement('label');
+                    label.className = 'font-semibold w-1/3';
+                    label.textContent = feature;
+                    div.appendChild(label);
+
+                    const select = document.createElement('select');
+                    select.className = 'w-2/3 p-2 border border-gray-300 rounded-md';
+                    select.name = feature.replace(/\s/g, '');
+                    select.setAttribute('data-feature-name', feature);
+                    div.appendChild(select);
+
+                    productOptionsContent.appendChild(div);
+                });
+                
+                productOptionsContent.querySelectorAll('select').forEach(select => {
+                    select.addEventListener('change', updateRateOnSelection);
+                });
+
+                updateOptions(products);
+                productOptionsModal.classList.remove('hidden');
+            };
+
+            const updateOptions = (products) => {
+                availableFeatures.forEach(feature => {
+                    const selectElement = productOptionsContent.querySelector(`[data-feature-name="${feature}"]`);
+                    if (selectElement) {
+                        const uniqueOptions = new Set();
+                        products.forEach(product => {
+                            const value = product[feature];
+                            if (value && value.toString().trim() !== '') uniqueOptions.add(value.toString().trim());
+                        });
+
+                        const currentValue = selectElement.value;
+                        selectElement.innerHTML = '';
+                        const defaultOption = document.createElement('option');
+                        defaultOption.value = '';
+                        defaultOption.textContent = `Select ${feature}`;
+                        selectElement.appendChild(defaultOption);
+
+                        Array.from(uniqueOptions).sort((a,b) => {
+                          const an = parseFloat(a), bn = parseFloat(b);
+                          if (!isNaN(an) && !isNaN(bn)) return an - bn;
+                          return String(a).localeCompare(String(b));
+                        }).forEach(optionText => {
+                            const option = document.createElement('option');
+                            option.value = optionText;
+                            option.textContent = optionText;
+                            selectElement.appendChild(option);
+                        });
+                        
+                        if (uniqueOptions.size === 1) selectElement.value = Array.from(uniqueOptions)[0];
+                        else selectElement.value = currentValue;
+                    }
+                });
+            };
+
+            const updateRateOnSelection = () => {
+                const selectedProductName = currentItemRow.querySelector('.product-search-input').value;
+                let filteredProducts = productMasterData.filter(p => p['Product Name'] === selectedProductName);
+                
+                const selects = productOptionsContent.querySelectorAll('select');
+                selects.forEach(select => {
+                    const featureName = select.getAttribute('data-feature-name');
+                    const selectedValue = select.value;
+                    if (selectedValue) filteredProducts = filteredProducts.filter(p => p[featureName] && p[featureName].toString() === selectedValue);
+                });
+
+                updateOptions(filteredProducts);
+
+                if (filteredProducts.length === 1) {
+                    const rate = filteredProducts[0]['Rate/SqFt'];
+                    const thk  = filteredProducts[0]['Thickness (mm)'];
+                    const len  = filteredProducts[0]['Length (ft)'];
+                    const brd  = filteredProducts[0]['Breadth (ft)'];
+
+                    if (rate && currentItemRow.querySelector('.item-rate')) currentItemRow.querySelector('.item-rate').value = rate.toString();
+                    if (thk  && currentItemRow.querySelector('.item-thk'))  currentItemRow.querySelector('.item-thk').value  = thk.toString();
+                    if (len  && currentItemRow.querySelector('.item-len'))  currentItemRow.querySelector('.item-len').value  = len.toString();
+                    if (brd  && currentItemRow.querySelector('.item-brd'))  currentItemRow.querySelector('.item-brd').value  = brd.toString();
+                } else if (filteredProducts.length === 0) {
+                    if (currentItemRow.querySelector('.item-rate')) currentItemRow.querySelector('.item-rate').value = '';
+                    if (currentItemRow.querySelector('.item-thk'))  currentItemRow.querySelector('.item-thk').value  = '';
+                }
+            };
+            
+            saveModalBtn.addEventListener('click', () => {
+                const particularsDiv = currentItemRow.querySelector('.item-particulars');
+                const productSearchInput = currentItemRow.querySelector('.product-search-input');
+                const thkInput = currentItemRow.querySelector('.item-thk');
+                const rateInput = currentItemRow.querySelector('.item-rate');
+                const lenInput = currentItemRow.querySelector('.item-len');
+                const brdInput = currentItemRow.querySelector('.item-brd');
+                
+                const selectedFeatures = Array.from(productOptionsContent.querySelectorAll('select')).map(select => {
+                    return { name: select.getAttribute('data-feature-name'), value: select.value };
+                }).filter(f => f.value);
+
+                const selectedProductName = productSearchInput.value;
+                const matchingProduct = productMasterData.find(p => {
+                    return p['Product Name'] === selectedProductName && selectedFeatures.every(f => p[f.name] && f.value.includes(p[f.name].toString()));
+                });
+                
+                if (matchingProduct) {
+                    thkInput.value  = matchingProduct['Thickness (mm)'] || '';
+                    rateInput.value = matchingProduct['Rate/SqFt'] || '';
+                    lenInput.value  = matchingProduct['Length (ft)'] || '';
+                    brdInput.value  = matchingProduct['Breadth (ft)'] || '';
+                    
+                    const descriptionLines = selectedFeatures
+                        .filter(f => f.name !== 'Thickness (mm)' && f.name !== 'Rate/SqFt')
+                        .map(f => `${f.name}: ${f.value}`);
+                    const updatedDescription = `${selectedProductName}<br>${descriptionLines.join('<br>')}`;
+                    particularsDiv.innerHTML = updatedDescription;
+
+                    const fixedW = matchingProduct['Weight/Board'] ?? matchingProduct['Fixed_Weight_kg'] ?? matchingProduct['Weight_kg'];
+                    if (fixedW) currentItemRow.dataset.fixedWeight = String(fixedW); else delete currentItemRow.dataset.fixedWeight;
+                    if (matchingProduct['Density_kg_per_m3']) {
+                        currentItemRow.dataset.density = String(matchingProduct['Density_kg_per_m3']);
+                    } else if ((matchingProduct['Grade'] || '').toString().match(/marine/i)) {
+                        currentItemRow.dataset.density = '700';
+                    } else {
+                        currentItemRow.dataset.density = '600';
+                    }
+
+                    productSearchInput.style.display = 'none';
+                    particularsDiv.style.display = 'block';
+
+                    const thk = parseFloat(thkInput.value) || 0;
+                    const len = parseFloat(lenInput.value) || 0;
+                    const brd = parseFloat(brdInput.value) || 0;
+                    const qty = parseFloat(currentItemRow.querySelector('.item-qty').value) || 0;
+                    const rate = parseFloat(rateInput.value) || 0;
+
+                    const sqft = (len * brd * qty).toFixed(2);
+                    const amount = (parseFloat(sqft) * rate).toFixed(2);
+                    currentItemRow.querySelector('.item-sqft').textContent = sqft;
+                    currentItemRow.querySelector('.item-amount').textContent = amount;
+                    updateTotals();
+                } else {
+                    showMessage("Could not find a matching product for the selected options.");
+                }
+                
+                productOptionsModal.classList.add('hidden');
+            });
+
+            cancelModalBtn.addEventListener('click', () => {
+                productOptionsModal.classList.add('hidden');
+            });
+
+            const statesAndDistricts = { 
+                "Andhra Pradesh": ["Anantapur","Chittoor","East Godavari","Guntur","Krishna","Kurnool","Prakasam","Srikakulam","Sri Potti Sriramulu Nellore","Visakhapatnam","Vizianagaram","West Godavari","Y.S.R. Kadapa"],
+                "Puducherry": ["Karaikal","Mahe","Puducherry","Yanam"]
+            };
+            
+            const populateStateSelect = (selectElement) => {
+                for (const state in statesAndDistricts) {
+                    const option = document.createElement('option');
+                    option.value = state;
+                    option.textContent = state;
+                    selectElement.appendChild(option);
+                }
+            };
+            populateStateSelect(billingStateSelect);
+            populateStateSelect(shippingStateSelect);
+
+            const handleStateChange = (stateSelect, districtSelect) => {
+                const selectedState = stateSelect.value;
+                districtSelect.innerHTML = '<option value="">Select District</option>';
+                districtSelect.disabled = true;
+
+                if (selectedState) {
+                    const districts = statesAndDistricts[selectedState];
+                    districts.forEach(district => {
+                        const option = document.createElement('option');
+                        option.value = district;
+                        option.textContent = district;
+                        districtSelect.appendChild(option);
+                    });
+                    districtSelect.disabled = false;
+                }
+            };
+
+            billingStateSelect.addEventListener('change', () => handleStateChange(billingStateSelect, billingDistrictSelect));
+            shippingStateSelect.addEventListener('change', () => handleStateChange(shippingStateSelect, shippingDistrictSelect));
+            
+            copyBillingBtn.addEventListener('click', () => {
+                const billingAddressLine = document.getElementById('billingAddressLine').textContent;
+                const billingState = billingStateSelect.value;
+                const billingDistrict = billingDistrictSelect.value;
+                
+                document.getElementById('shippingAddressLine').textContent = billingAddressLine;
+                shippingStateSelect.value = billingState;
+                handleStateChange(shippingStateSelect, shippingDistrictSelect);
+                shippingDistrictSelect.value = billingDistrict;
+            });
+        });
+    </script>
+    
+
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+    <script>
+    (function(){
+      function handleProductData(products) {
+        if (!Array.isArray(window.productMasterData)) { window.productMasterData = []; }
+        window.productMasterData.splice(0, window.productMasterData.length, ...products);
+        if (typeof productMasterData !== 'undefined' && Array.isArray(productMasterData)) {
+          productMasterData.splice(0, productMasterData.length, ...products);
+        }
+
+        const uniqueProductNames = [...new Set(products.map(p => p['Product Name']))];
+        const dl = document.getElementById('product-list');
+        if (dl) {
+          dl.innerHTML = '';
+          uniqueProductNames.forEach(name => {
+            const opt = document.createElement('option');
+            opt.value = name;
+            dl.appendChild(opt);
+          });
+        }
+      }
+
+      function handleError(error) {
+        console.error("Failed to load product data:", error);
+        const messageBox = document.getElementById('message-box');
+        if (messageBox) {
+          messageBox.textContent = "Error: " + (error && error.message ? error.message : String(error));
+          messageBox.style.display = 'block';
+          setTimeout(() => messageBox.style.display = 'none', 3000);
+        }
+      }
+
+      window.addEventListener('load', function(){
+        fetch('product_master.csv', { cache: 'no-store' })
+          .then(resp => {
+            if (!resp.ok) throw new Error("HTTP " + resp.status + " while fetching product_master.csv");
+            return resp.text();
+          })
+          .then(csvText => {
+            const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+            if (parsed.errors && parsed.errors.length) {
+              console.warn("CSV parse warnings/errors:", parsed.errors);
+            }
+            const rows = parsed.data.map(row => {
+              const obj = {};
+              Object.keys(row).forEach(k => {
+                const key = String(k || '').trim();
+                const val = row[k] != null ? String(row[k]).trim() : "";
+                obj[key] = val;
+              });
+              return obj;
+            });
+            handleProductData(rows);
+          })
+          .catch(handleError);
+      });
+    })();
+    </script>
+
+</body>
+</html>
