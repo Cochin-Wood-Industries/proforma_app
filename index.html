@@ -725,9 +725,18 @@
                 updateSno();
             });
 
-            // Transportation button only reveals section
+            
+            // Transportation button reveals section and adds first row if empty
             addTransportationBtn.addEventListener('click', () => {
                 transportationSection.classList.remove('hidden');
+            
+                // If no transportation rows exist, create the first one
+                if (transportationItems.children.length === 0) {
+                    const firstRow = createTransportationRow(1);
+                    transportationItems.appendChild(firstRow);
+                    updateTransportationSno();
+                    updateTransportationTotals();
+                }
             });
 
             addTransportationItemBtn.addEventListener('click', () => {
@@ -1016,3 +1025,4 @@
 
 </body>
 </html>
+
