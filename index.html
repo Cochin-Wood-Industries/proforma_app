@@ -350,7 +350,7 @@
                 </div>
 
                 <div id="termsBlock" class="w-full md:w-7/12 border-l-4 border-secondary-accent pl-4 py-3 rounded-md">
-                    <strong class="block mb-2 text-sm font-bold text-primary-dark">Terms & Conditions:</strong>
+                    <strong class="block mb-2 text sm font-bold text-primary-dark">Terms & Conditions:</strong>
                     <ul class="list-disc pl-4 mt-2 text-xs space-y-1">
                         <li>**Pricing:** Valid for 3 days from quote/proforma date.</li>
                         <li>**Payment:** 50% advance on order acceptance; balance due post-production, pre-dispatch.</li>
@@ -437,7 +437,7 @@
             const grandTotalAmount = document.getElementById('grandTotalAmount');
             const totalWeightAmount = document.getElementById('totalWeightAmount');
             const invoiceDate = document.getElementById('invoiceDate');
-            const validTill = document.getElementById('validTill');                 // <-- ADDED
+            const validTill = document.getElementById('validTill');                 
             const billingStateSelect = document.getElementById('billingStateSelect');
             const billingDistrictSelect = document.getElementById('billingDistrictSelect');
             const shippingStateSelect = document.getElementById('shippingStateSelect');
@@ -480,10 +480,8 @@
             // Set today's date and auto-fill Valid Till
             const today = new Date().toISOString().split('T')[0];
             invoiceDate.value = today;
-            syncValidTillFromInvoiceDate();                              // <-- ADDED
-
-            // When Date changes later, re-auto-fill Valid Till
-            invoiceDate.addEventListener('change', syncValidTillFromInvoiceDate); // <-- ADDED
+            syncValidTillFromInvoiceDate();                              
+            invoiceDate.addEventListener('change', syncValidTillFromInvoiceDate); 
 
             // --- Auto-generate PI No (daily increment) ---
             function generatePiNo() {
@@ -660,6 +658,18 @@
                 return tr;
             };
 
+            // ---- TRANSPORTATION HELPERS (NEW) ----
+            const updateTransportationVisibility = () => {
+                const hasRows = transportationItems.children.length > 0;
+                if (hasRows) {
+                    transportationSection.classList.remove('hidden');
+                    addTransportationBtn.classList.add('hidden');
+                } else {
+                    transportationSection.classList.add('hidden');
+                    addTransportationBtn.classList.remove('hidden');
+                }
+            };
+
             const createTransportationRow = (sno) => {
                 const tr = document.createElement('tr');
                 tr.className = 'transportation-row text-center';
@@ -692,10 +702,7 @@
                     tr.remove();
                     updateTransportationSno();
                     updateTransportationTotals();
-                    
-                    if (transportationItems.children.length === 0) {
-                        transportationSection.classList.add('hidden');
-                    }
+                    updateTransportationVisibility();   // <— show button again if no rows
                 });
 
                 return tr;
@@ -725,18 +732,15 @@
                 updateSno();
             });
 
-            
-            // Transportation button reveals section and adds first row if empty
+            // Transportation button reveals section, hides itself, and adds first row if empty
             addTransportationBtn.addEventListener('click', () => {
-                transportationSection.classList.remove('hidden');
-            
-                // If no transportation rows exist, create the first one
                 if (transportationItems.children.length === 0) {
                     const firstRow = createTransportationRow(1);
                     transportationItems.appendChild(firstRow);
                     updateTransportationSno();
-                    updateTransportationTotals();
                 }
+                updateTransportationTotals();
+                updateTransportationVisibility(); // <— hide button, show section
             });
 
             addTransportationItemBtn.addEventListener('click', () => {
@@ -744,6 +748,7 @@
                 const newRow = createTransportationRow(newSno);
                 transportationItems.appendChild(newRow);
                 updateTransportationSno();
+                updateTransportationVisibility();   // keep button hidden while section active
             });
 
             gstRateSelect.addEventListener('change', updateTotals);
@@ -751,9 +756,11 @@
 
             updateTotals();
             updateTransportationTotals();
+            updateTransportationVisibility(); // initial state
 
             // === Modal Logic ===
             const showProductOptionsModal = (products) => {
+                const productOptionsContent = document.getElementById('productOptionsContent');
                 productOptionsContent.innerHTML = '';
                 const featureOrder = ['Faceveneer', 'Thickness (mm)', 'Core Material', 'Glue', 'Weight/Board', 'Chemical Dipping', 'Film Face Color', 'Film Face GSM', 'Wire Mesh', 'Grade', 'Length (ft)', 'Breadth (ft)', 'Rate/SqFt'];
                 
@@ -782,10 +789,11 @@
                 });
 
                 updateOptions(products);
-                productOptionsModal.classList.remove('hidden');
+                document.getElementById('productOptionsModal').classList.remove('hidden');
             };
 
             const updateOptions = (products) => {
+                const productOptionsContent = document.getElementById('productOptionsContent');
                 availableFeatures.forEach(feature => {
                     const selectElement = productOptionsContent.querySelector(`[data-feature-name="${feature}"]`);
                     if (selectElement) {
@@ -823,7 +831,7 @@
                 const selectedProductName = currentItemRow.querySelector('.product-search-input').value;
                 let filteredProducts = productMasterData.filter(p => p['Product Name'] === selectedProductName);
                 
-                const selects = productOptionsContent.querySelectorAll('select');
+                const selects = document.getElementById('productOptionsContent').querySelectorAll('select');
                 selects.forEach(select => {
                     const featureName = select.getAttribute('data-feature-name');
                     const selectedValue = select.value;
@@ -848,7 +856,11 @@
                 }
             };
             
+            const saveModalBtn = document.getElementById('saveModalBtn');
+            const cancelModalBtn = document.getElementById('cancelModalBtn');
+
             saveModalBtn.addEventListener('click', () => {
+                const productOptionsContent = document.getElementById('productOptionsContent');
                 const particularsDiv = currentItemRow.querySelector('.item-particulars');
                 const productSearchInput = currentItemRow.querySelector('.product-search-input');
                 const thkInput = currentItemRow.querySelector('.item-thk');
@@ -905,11 +917,11 @@
                     showMessage("Could not find a matching product for the selected options.");
                 }
                 
-                productOptionsModal.classList.add('hidden');
+                document.getElementById('productOptionsModal').classList.add('hidden');
             });
 
             cancelModalBtn.addEventListener('click', () => {
-                productOptionsModal.classList.add('hidden');
+                document.getElementById('productOptionsModal').classList.add('hidden');
             });
 
             // States/Districts (sample)
@@ -1025,4 +1037,3 @@
 
 </body>
 </html>
-
