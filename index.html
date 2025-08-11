@@ -350,7 +350,7 @@
                 </div>
 
                 <div id="termsBlock" class="w-full md:w-7/12 border-l-4 border-secondary-accent pl-4 py-3 rounded-md">
-                    <strong class="block mb-2 text sm font-bold text-primary-dark">Terms & Conditions:</strong>
+                    <strong class="block mb-2 text-sm font-bold text-primary-dark">Terms & Conditions:</strong>
                     <ul class="list-disc pl-4 mt-2 text-xs space-y-1">
                         <li>**Pricing:** Valid for 3 days from quote/proforma date.</li>
                         <li>**Payment:** 50% advance on order acceptance; balance due post-production, pre-dispatch.</li>
@@ -437,7 +437,7 @@
             const grandTotalAmount = document.getElementById('grandTotalAmount');
             const totalWeightAmount = document.getElementById('totalWeightAmount');
             const invoiceDate = document.getElementById('invoiceDate');
-            const validTill = document.getElementById('validTill');                 
+            const validTill = document.getElementById('validTill');                 // <-- ADDED
             const billingStateSelect = document.getElementById('billingStateSelect');
             const billingDistrictSelect = document.getElementById('billingDistrictSelect');
             const shippingStateSelect = document.getElementById('shippingStateSelect');
@@ -470,7 +470,7 @@
               const yyyy = d.getFullYear();
               const mm = String(d.getMonth() + 1).padStart(2, '0');
               const dd = String(d.getDate()).padStart(2, '0');
-              return `${yyyy}-${mm}-${dd}`;
+              return ${yyyy}-${mm}-${dd};
             }
             function syncValidTillFromInvoiceDate() {
               if (!invoiceDate.value) return;
@@ -480,8 +480,10 @@
             // Set today's date and auto-fill Valid Till
             const today = new Date().toISOString().split('T')[0];
             invoiceDate.value = today;
-            syncValidTillFromInvoiceDate();                              
-            invoiceDate.addEventListener('change', syncValidTillFromInvoiceDate); 
+            syncValidTillFromInvoiceDate();                              // <-- ADDED
+
+            // When Date changes later, re-auto-fill Valid Till
+            invoiceDate.addEventListener('change', syncValidTillFromInvoiceDate); // <-- ADDED
 
             // --- Auto-generate PI No (daily increment) ---
             function generatePiNo() {
@@ -489,12 +491,12 @@
               const yyyy = d.getFullYear();
               const mm = String(d.getMonth() + 1).padStart(2, '0');
               const dd = String(d.getDate()).padStart(2, '0');
-              const yyyymmdd = `${yyyy}${mm}${dd}`;
-              const key = `piSeq-${yyyymmdd}`;
+              const yyyymmdd = ${yyyy}${mm}${dd};
+              const key = piSeq-${yyyymmdd};
               const next = (parseInt(localStorage.getItem(key) || '0', 10) + 1);
               localStorage.setItem(key, String(next));
               const seq = String(next).padStart(3, '0');
-              return `PI-${yyyymmdd}-${seq}`;
+              return PI-${yyyymmdd}-${seq};
             }
             if (invoiceNumberEl && invoiceNumberEl.textContent.trim() === '') {
               invoiceNumberEl.textContent = generatePiNo();
@@ -506,7 +508,7 @@
                 setTimeout(() => { messageBox.style.display = 'none'; }, duration);
             };
 
-            const formatCurrency = (amount) => `₹${parseFloat(amount).toFixed(2)}`;
+            const formatCurrency = (amount) => ₹${parseFloat(amount).toFixed(2)};
 
             // === Totals ===
             const updateTotals = () => {
@@ -560,7 +562,7 @@
             const createItemRow = (sno) => {
                 const tr = document.createElement('tr');
                 tr.className = 'item-row text-center';
-                tr.innerHTML = `
+                tr.innerHTML = 
                     <td class="border-t py-2 px-2 text-left" style="width: 6%;">${sno}</td>
                     <td class="border-t py-2 px-2" style="width: 30%;">
                         <div contenteditable="true" class="item-particulars w-full bg-transparent border-none p-0 text-left cursor-text" aria-label="Particulars" tabindex="0"></div>
@@ -579,7 +581,7 @@
                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
                         </button>
                     </td>
-                `;
+                ;
 
                 const inputs = tr.querySelectorAll('.item-thk, .item-len, .item-brd, .item-qty, .item-rate');
                 inputs.forEach(input => {
@@ -658,22 +660,10 @@
                 return tr;
             };
 
-            // ---- TRANSPORTATION HELPERS (NEW) ----
-            const updateTransportationVisibility = () => {
-                const hasRows = transportationItems.children.length > 0;
-                if (hasRows) {
-                    transportationSection.classList.remove('hidden');
-                    addTransportationBtn.classList.add('hidden');
-                } else {
-                    transportationSection.classList.add('hidden');
-                    addTransportationBtn.classList.remove('hidden');
-                }
-            };
-
             const createTransportationRow = (sno) => {
                 const tr = document.createElement('tr');
                 tr.className = 'transportation-row text-center';
-                tr.innerHTML = `
+                tr.innerHTML = 
                     <td class="border-t py-2 px-2 text-left" style="width: 6%;">${sno}</td>
                     <td class="border-t py-2 px-2" style="width: 20%;"><input type="text" class="transportation-destination w-full bg-transparent border-none p-0 text-left"></td>
                     <td class="border-t py-2 px-2" style="width: 15%;"><input type="number" step="1" class="transportation-distance w-full bg-transparent border-none p-0 text-center"></td>
@@ -685,7 +675,7 @@
                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
                         </button>
                     </td>
-                `;
+                ;
 
                 const inputs = tr.querySelectorAll('.transportation-distance, .transportation-weight, .transportation-rate');
                 inputs.forEach(input => {
@@ -702,7 +692,10 @@
                     tr.remove();
                     updateTransportationSno();
                     updateTransportationTotals();
-                    updateTransportationVisibility();   // <— show button again if no rows
+                    
+                    if (transportationItems.children.length === 0) {
+                        transportationSection.classList.add('hidden');
+                    }
                 });
 
                 return tr;
@@ -732,15 +725,18 @@
                 updateSno();
             });
 
-            // Transportation button reveals section, hides itself, and adds first row if empty
+            
+            // Transportation button reveals section and adds first row if empty
             addTransportationBtn.addEventListener('click', () => {
+                transportationSection.classList.remove('hidden');
+            
+                // If no transportation rows exist, create the first one
                 if (transportationItems.children.length === 0) {
                     const firstRow = createTransportationRow(1);
                     transportationItems.appendChild(firstRow);
                     updateTransportationSno();
+                    updateTransportationTotals();
                 }
-                updateTransportationTotals();
-                updateTransportationVisibility(); // <— hide button, show section
             });
 
             addTransportationItemBtn.addEventListener('click', () => {
@@ -748,7 +744,6 @@
                 const newRow = createTransportationRow(newSno);
                 transportationItems.appendChild(newRow);
                 updateTransportationSno();
-                updateTransportationVisibility();   // keep button hidden while section active
             });
 
             gstRateSelect.addEventListener('change', updateTotals);
@@ -756,11 +751,9 @@
 
             updateTotals();
             updateTransportationTotals();
-            updateTransportationVisibility(); // initial state
 
             // === Modal Logic ===
             const showProductOptionsModal = (products) => {
-                const productOptionsContent = document.getElementById('productOptionsContent');
                 productOptionsContent.innerHTML = '';
                 const featureOrder = ['Faceveneer', 'Thickness (mm)', 'Core Material', 'Glue', 'Weight/Board', 'Chemical Dipping', 'Film Face Color', 'Film Face GSM', 'Wire Mesh', 'Grade', 'Length (ft)', 'Breadth (ft)', 'Rate/SqFt'];
                 
@@ -789,13 +782,12 @@
                 });
 
                 updateOptions(products);
-                document.getElementById('productOptionsModal').classList.remove('hidden');
+                productOptionsModal.classList.remove('hidden');
             };
 
             const updateOptions = (products) => {
-                const productOptionsContent = document.getElementById('productOptionsContent');
                 availableFeatures.forEach(feature => {
-                    const selectElement = productOptionsContent.querySelector(`[data-feature-name="${feature}"]`);
+                    const selectElement = productOptionsContent.querySelector([data-feature-name="${feature}"]);
                     if (selectElement) {
                         const uniqueOptions = new Set();
                         products.forEach(product => {
@@ -807,7 +799,7 @@
                         selectElement.innerHTML = '';
                         const defaultOption = document.createElement('option');
                         defaultOption.value = '';
-                        defaultOption.textContent = `Select ${feature}`;
+                        defaultOption.textContent = Select ${feature};
                         selectElement.appendChild(defaultOption);
 
                         Array.from(uniqueOptions).sort((a,b) => {
@@ -831,7 +823,7 @@
                 const selectedProductName = currentItemRow.querySelector('.product-search-input').value;
                 let filteredProducts = productMasterData.filter(p => p['Product Name'] === selectedProductName);
                 
-                const selects = document.getElementById('productOptionsContent').querySelectorAll('select');
+                const selects = productOptionsContent.querySelectorAll('select');
                 selects.forEach(select => {
                     const featureName = select.getAttribute('data-feature-name');
                     const selectedValue = select.value;
@@ -856,11 +848,7 @@
                 }
             };
             
-            const saveModalBtn = document.getElementById('saveModalBtn');
-            const cancelModalBtn = document.getElementById('cancelModalBtn');
-
             saveModalBtn.addEventListener('click', () => {
-                const productOptionsContent = document.getElementById('productOptionsContent');
                 const particularsDiv = currentItemRow.querySelector('.item-particulars');
                 const productSearchInput = currentItemRow.querySelector('.product-search-input');
                 const thkInput = currentItemRow.querySelector('.item-thk');
@@ -885,8 +873,8 @@
                     
                     const descriptionLines = selectedFeatures
                         .filter(f => f.name !== 'Thickness (mm)' && f.name !== 'Rate/SqFt')
-                        .map(f => `${f.name}: ${f.value}`);
-                    const updatedDescription = `${selectedProductName}<br>${descriptionLines.join('<br>')}`;
+                        .map(f => ${f.name}: ${f.value});
+                    const updatedDescription = ${selectedProductName}<br>${descriptionLines.join('<br>')};
                     particularsDiv.innerHTML = updatedDescription;
 
                     const fixedW = matchingProduct['Weight/Board'] ?? matchingProduct['Fixed_Weight_kg'] ?? matchingProduct['Weight_kg'];
@@ -917,11 +905,11 @@
                     showMessage("Could not find a matching product for the selected options.");
                 }
                 
-                document.getElementById('productOptionsModal').classList.add('hidden');
+                productOptionsModal.classList.add('hidden');
             });
 
             cancelModalBtn.addEventListener('click', () => {
-                document.getElementById('productOptionsModal').classList.add('hidden');
+                productOptionsModal.classList.add('hidden');
             });
 
             // States/Districts (sample)
