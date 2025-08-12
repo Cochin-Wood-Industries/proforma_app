@@ -132,8 +132,15 @@
                     <div class="flex justify-between items-center mb-1"><strong class="text-sm font-bold text-primary-dark mr-2">P.I. No:</strong> <span id="invoiceNumber" contenteditable="true" class="text-right flex-grow font-semibold min-w-[120px]" aria-label="Proforma Invoice Number"></span></div>
                     <div class="flex justify-between items-center mb-1"><strong class="text-sm font-bold text-primary-dark mr-2">Date:</strong> <input type="date" id="invoiceDate" class="w-auto text-right flex-grow"></div>
                     <div class="flex justify-between items-center mb-1"><strong class="text-sm font-bold text-primary-dark mr-2">Valid Till:</strong> <input type="date" id="validTill" class="w-auto text-right flex-grow"></div>
-                    <div class="flex justify-between items-center"><strong class="text-sm font-bold text-primary-dark mr-2">Currency:</strong>
+                    <div class="flex justify-between items-center mb-1"><strong class="text-sm font-bold text-primary-dark mr-2">Currency:</strong>
                         <span id="currencyDisplay" class="w-auto text-sm bg-white text-right font-bold">INR (₹)</span>
+                    </div>
+                    <!-- Moved Incoterms here -->
+                    <div class="flex justify-between items-center"><strong class="text-sm font-bold text-primary-dark mr-2">Incoterms:</strong>
+                        <select id="incoterms" class="w-auto text-sm bg-gray-50 border border-gray-300 rounded-md p-1">
+                            <option value="EXW" selected>Ex Works (EXW)</option>
+                            <option value="DAP">Delivered at Place (DAP)</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -367,13 +374,6 @@
                         <li>**Force Majeure:** Not liable for delays due to uncontrollable events like natural disasters, pandemics, governmental actions, etc.</li>
                         <li id="orderSpecificTandC_li" class="print-hide-if-empty">**Order Specific T&C:** <span id="orderSpecificTandC" contenteditable="true" class="font-semibold" aria-label="Order specific terms and conditions">N/A</span></li>
                     </ul>
-                    <div class="mt-4">
-                        <strong class="block mb-2 text sm font-bold text-primary-dark">Incoterms:</strong>
-                        <select id="incoterms" class="w-full text-xs bg-gray-50 border border-gray-300 rounded-md p-1">
-                            <option value="EXW" selected>Ex Works (EXW)</option>
-                            <option value="DAP">Delivered at Place (DAP)</option>
-                        </select>
-                    </div>
                 </div>
             </div>
         </footer>
