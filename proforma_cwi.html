@@ -254,30 +254,31 @@
                         <thead class="bg-primary-dark text-white text-left">
                           <tr>
                             <th scope="col" class="py-3 px-2" style="width: 6%;">S.No</th>
-                            <th scope="col" class="py-3 px-2" style="width: 20%;">Destination</th>
-                            <th scope="col" class="py-3 px-2" style="width: 15%;">Distance<br>(km)</th>
-                            <th scope="col" class="py-3 px-2" style="width: 15%;">Weight<br>(Tonne)</th>
-                            <th scope="col" class="py-3 px-2" style="width: 15%;">Rate/<br>Tonne</th>
-                            <th scope="col" class="py-3 px-2 text-right" style="width: 20%;">Amount</th>
-                            <th scope="col" class="py-3 px-2 no-print" style="width: 9%;"></th>
+                            <th scope="col" class="py-3 px-2" style="width: 18%;">Dispatch Point</th>
+                            <th scope="col" class="py-3 px-2" style="width: 18%;">Destination</th>
+                            <th scope="col" class="py-3 px-2" style="width: 14%;">Distance<br>(km)</th>
+                            <th scope="col" class="py-3 px-2" style="width: 14%;">Weight<br>(Tonne)</th>
+                            <th scope="col" class="py-3 px-2" style="width: 14%;">Rate/<br>Tonne</th>
+                            <th scope="col" class="py-3 px-2 text-right" style="width: 12%;">Amount</th>
+                            <th scope="col" class="py-3 px-2 no-print" style="width: 4%;"></th>
                           </tr>
                         </thead>
 
                         <tbody id="transportationItems"></tbody>
                         <tfoot>
                             <tr class="font-bold">
-                                <td colspan="5" class="border-t pt-4 pr-4 text-right">Subtotal</td>
+                                <td colspan="6" class="border-t pt-4 pr-4 text-right">Subtotal</td>
                                 <td id="transportationSubtotalAmount" class="border-t pt-4 pr-2 text-right">₹0.00</td>
                                 <td class="border-t pt-4 no-print"></td>
                             </tr>
                             <tr class="font-bold">
-                                <td colspan="5" class="pt-2 pr-4 text-right">
+                                <td colspan="6" class="pt-2 pr-4 text-right">
                                     <div class="flex justify-end items-center space-x-2">
                                         <span>GST</span>
                                         <select id="transportationGstRateSelect" class="w-auto text-sm bg-gray-50 border border-gray-300 rounded-md p-1">
-                                            <option value="0.05" selected>18%</option>
+                                            <option value="0.05">5%</option>
                                             <option value="0.12">12%</option>
-                                            <option value="0.18">18%</option>
+                                            <option value="0.18" selected>18%</option>
                                             <option value="0.28">28%</option>
                                         </select>
                                     </div>
@@ -286,9 +287,9 @@
                                 <td class="pt-2 no-print"></td>
                             </tr>
                             <tr class="no-print">
-                                <td colspan="7" class="pt-4 pb-2 text-right add-remove-buttons">
+                                <td colspan="8" class="pt-4 pb-2 text-right add-remove-buttons">
                                     <button id="addTransportationItemBtn" class="w-8 h-8 flex items-center justify-center bg-secondary-accent hover:bg-dark-shade text-white font-bold rounded-full shadow-md transition-transform hover:scale-110" aria-label="Add new transportation row">
-                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"></path></svg>
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2H6a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"></path></svg>
                                     </button>
                                 </td>
                             </tr>
@@ -437,7 +438,7 @@
             const grandTotalAmount = document.getElementById('grandTotalAmount');
             const totalWeightAmount = document.getElementById('totalWeightAmount');
             const invoiceDate = document.getElementById('invoiceDate');
-            const validTill = document.getElementById('validTill');                 // <-- ADDED
+            const validTill = document.getElementById('validTill');
             const billingStateSelect = document.getElementById('billingStateSelect');
             const billingDistrictSelect = document.getElementById('billingDistrictSelect');
             const shippingStateSelect = document.getElementById('shippingStateSelect');
@@ -480,10 +481,10 @@
             // Set today's date and auto-fill Valid Till
             const today = new Date().toISOString().split('T')[0];
             invoiceDate.value = today;
-            syncValidTillFromInvoiceDate();                              // <-- ADDED
+            syncValidTillFromInvoiceDate();
 
             // When Date changes later, re-auto-fill Valid Till
-            invoiceDate.addEventListener('change', syncValidTillFromInvoiceDate); // <-- ADDED
+            invoiceDate.addEventListener('change', syncValidTillFromInvoiceDate);
 
             // --- Auto-generate PI No (daily increment) ---
             function generatePiNo() {
@@ -665,12 +666,23 @@
                 tr.className = 'transportation-row text-center';
                 tr.innerHTML = `
                     <td class="border-t py-2 px-2 text-left" style="width: 6%;">${sno}</td>
-                    <td class="border-t py-2 px-2" style="width: 20%;"><input type="text" class="transportation-destination w-full bg-transparent border-none p-0 text-left"></td>
-                    <td class="border-t py-2 px-2" style="width: 15%;"><input type="number" step="1" class="transportation-distance w-full bg-transparent border-none p-0 text-center"></td>
-                    <td class="border-t py-2 px-2" style="width: 15%;"><input type="number" step="0.01" class="transportation-weight w-full bg-transparent border-none p-0 text-center"></td>
-                    <td class="border-t py-2 px-2" style="width: 15%;"><input type="number" step="1" class="transportation-rate w-full bg-transparent border-none p-0 text-center"></td>
-                    <td class="transportation-amount border-t py-2 px-2 text-right" style="width: 20%;">0.00</td>
-                    <td class="border-t no-print text-center" style="width: 9%;">
+                    <td class="border-t py-2 px-2" style="width: 18%;">
+                        <input type="text" class="transportation-dispatch w-full bg-transparent border-none p-0 text-left" placeholder="e.g., Perumbavoor Depot">
+                    </td>
+                    <td class="border-t py-2 px-2" style="width: 18%;">
+                        <input type="text" class="transportation-destination w-full bg-transparent border-none p-0 text-left">
+                    </td>
+                    <td class="border-t py-2 px-2" style="width: 14%;">
+                        <input type="number" step="1" class="transportation-distance w-full bg-transparent border-none p-0 text-center">
+                    </td>
+                    <td class="border-t py-2 px-2" style="width: 14%;">
+                        <input type="number" step="0.01" class="transportation-weight w-full bg-transparent border-none p-0 text-center">
+                    </td>
+                    <td class="border-t py-2 px-2" style="width: 14%;">
+                        <input type="number" step="1" class="transportation-rate w-full bg-transparent border-none p-0 text-center">
+                    </td>
+                    <td class="transportation-amount border-t py-2 px-2 text-right" style="width: 12%;">0.00</td>
+                    <td class="border-t no-print text-center" style="width: 4%;">
                         <button class="remove-transportation-btn w-6 h-6 flex items-center justify-center text-white bg-red-500 hover:bg-red-700 rounded-full transition-colors" aria-label="Remove transportation row">
                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
                         </button>
@@ -725,12 +737,9 @@
                 updateSno();
             });
 
-            
             // Transportation button reveals section and adds first row if empty
             addTransportationBtn.addEventListener('click', () => {
                 transportationSection.classList.remove('hidden');
-            
-                // If no transportation rows exist, create the first one
                 if (transportationItems.children.length === 0) {
                     const firstRow = createTransportationRow(1);
                     transportationItems.appendChild(firstRow);
@@ -1025,5 +1034,3 @@
 
 </body>
 </html>
-
-
