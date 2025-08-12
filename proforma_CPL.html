@@ -498,7 +498,7 @@
               const next = (parseInt(localStorage.getItem(key) || '0', 10) + 1);
               localStorage.setItem(key, String(next));
               const seq = String(next).padStart(3, '0');
-              return `PI-${yyyymmdd}-${seq}`;
+              return `CPL-${yyyymmdd}-${seq}`;
             }
             if (invoiceNumberEl && invoiceNumberEl.textContent.trim() === '') {
               invoiceNumberEl.textContent = generatePiNo();
