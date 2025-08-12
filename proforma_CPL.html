@@ -19,15 +19,16 @@
             display: inline-block; min-width: 50px; border-bottom: 1px dashed #c1d6e1;
             padding: 2px; outline: none; cursor: text; transition: all 0.2s;
         }
-        [contenteditable="true"]:hover, [contenteditable="true"]:focus { border-bottom-color: #004343; background-color: #f0f8ff; }
+        /* switched teal → brown */
+        [contenteditable="true"]:hover, [contenteditable="true"]:focus { border-bottom-color: #5A3B2E; background-color: #f8f4ef; }
         input, select {
             border: 1px solid #c1d6e1; padding: 2px 4px; border-radius: 4px; outline: none;
             transition: all 0.2s;
         }
-        input:hover, select:hover, input:focus, select:focus { border-color: #004343; background-color: #f0f8ff; }
+        input:hover, select:hover, input:focus, select:focus { border-color: #5A3B2E; background-color: #f8f4ef; }
         .message-box {
             position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-            background-color: #004343; color: white; padding: 1rem 2rem; border-radius: 8px;
+            background-color: #5A3B2E; color: white; padding: 1rem 2rem; border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); z-index: 1000; display: none;
             animation: fadeInOut 3s forwards; font-weight: 500;
         }
@@ -47,21 +48,12 @@
         .invoice-container, body { background-color: white; }
 
         /* Table Layout for both screen and print */
-        .table-container table {
-            table-layout: fixed;
-            width: 100%;
-        }
-        .table-container table th {
-            white-space: normal;
-            overflow-wrap: anywhere;
-        }
+        .table-container table { table-layout: fixed; width: 100%; }
+        .table-container table th { white-space: normal; overflow-wrap: anywhere; }
 
-        /* Screen-specific styling */
         @media screen {
             .customer-info { display: flex; flex-direction: column; }
-            @media (min-width: 768px) {
-                .customer-info { flex-direction: row; }
-            }
+            @media (min-width: 768px) { .customer-info { flex-direction: row; } }
         }
 
         @media print {
@@ -102,8 +94,18 @@
         }
     </style>
     <script>
+        /* brown palette */
         tailwind.config = {
-            theme: { extend: { colors: { 'primary-dark': '#004343', 'secondary-accent': '#009a7b', 'light-accent': '#11c99d', 'dark-shade': '#0a5e5e' }}}
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-dark': '#5A3B2E',     // deep walnut
+                        'secondary-accent': '#8B5E3C', // medium wood
+                        'light-accent': '#C79A6B',     // highlight
+                        'dark-shade': '#3D271C'        // text accents
+                    }
+                }
+            }
         }
     </script>
 </head>
@@ -114,8 +116,8 @@
         <header class="flex flex-col md:flex-row justify-between items-start border-b-2 border-primary-dark pb-6 mb-6">
             <div class="w-full md:w-1/2 mb-6 md:mb-0">
                 <div class="flex items-center mb-2">
-                    <img src="logo_cpl.jpeg" alt="Cochin Plywood Industries Logo" class="w-12 h-12 rounded-full object-cover shadow-md mr-4" onerror="this.onerror=null;this.src='https://placehold.co/48x48/004343/ffffff?text=CWI';">
-                    <h2 class="text-lg font-bold text-teal-600">Cochin Plywood Private Limited</h2>
+                    <img src="logo_cpl.jpeg" alt="Cochin Plywood Industries Logo" class="w-12 h-12 rounded-full object-cover shadow-md mr-4" onerror="this.onerror=null;this.src='https://placehold.co/48x48/5A3B2E/ffffff?text=CPL';">
+                    <h2 class="text-lg font-bold text-[#5A3B2E]">Cochin Plywood Private Limited</h2>
                 </div>
                 <address class="text-xs text-dark-shade leading-snug pl-16">
                     <p>Thoppilan Building, 146/A, Thuruthy, Kuruppampady,<br>Ernakulam, Kerala – 683545, India</p>
@@ -275,9 +277,9 @@
                                     <div class="flex justify-end items-center space-x-2">
                                         <span>GST</span>
                                         <select id="transportationGstRateSelect" class="w-auto text-sm bg-gray-50 border border-gray-300 rounded-md p-1">
-                                            <option value="0.05" selected>18%</option>
+                                            <option value="0.05">5%</option>
                                             <option value="0.12">12%</option>
-                                            <option value="0.18">18%</option>
+                                            <option value="0.18" selected>18%</option>
                                             <option value="0.28">28%</option>
                                         </select>
                                     </div>
@@ -437,7 +439,7 @@
             const grandTotalAmount = document.getElementById('grandTotalAmount');
             const totalWeightAmount = document.getElementById('totalWeightAmount');
             const invoiceDate = document.getElementById('invoiceDate');
-            const validTill = document.getElementById('validTill');                 // <-- ADDED
+            const validTill = document.getElementById('validTill');
             const billingStateSelect = document.getElementById('billingStateSelect');
             const billingDistrictSelect = document.getElementById('billingDistrictSelect');
             const shippingStateSelect = document.getElementById('shippingStateSelect');
@@ -480,10 +482,10 @@
             // Set today's date and auto-fill Valid Till
             const today = new Date().toISOString().split('T')[0];
             invoiceDate.value = today;
-            syncValidTillFromInvoiceDate();                              // <-- ADDED
+            syncValidTillFromInvoiceDate();
 
             // When Date changes later, re-auto-fill Valid Till
-            invoiceDate.addEventListener('change', syncValidTillFromInvoiceDate); // <-- ADDED
+            invoiceDate.addEventListener('change', syncValidTillFromInvoiceDate);
 
             // --- Auto-generate PI No (daily increment) ---
             function generatePiNo() {
@@ -567,7 +569,7 @@
                     <td class="border-t py-2 px-2" style="width: 30%;">
                         <div contenteditable="true" class="item-particulars w-full bg-transparent border-none p-0 text-left cursor-text" aria-label="Particulars" tabindex="0"></div>
                         <input type="text" list="product-list" class="product-search-input w-full bg-transparent border-none p-0 text-left mt-1" aria-label="Product Search">
-                        <button type="button" class="open-features-btn hidden text-xs px-2 py-1 rounded ml-2 bg-[#008080] text-white hover:bg-[#006666] transition-colors" aria-label="Open feature selection">Features</button>
+                        <button type="button" class="open-features-btn hidden text-xs px-2 py-1 rounded ml-2 bg-[#5A3B2E] text-white hover:bg-[#3D271C] transition-colors" aria-label="Open feature selection">Features</button>
                     </td>
                     <td class="border-t py-2 px-2" style="width: 8%;"><input type="number" step="1" class="item-thk w-full bg-transparent border-none p-0 text-center"></td>
                     <td class="border-t py-2 px-2" style="width: 7%;"><input type="number" step="1" class="item-len w-full bg-transparent border-none p-0 text-center"></td>
@@ -725,12 +727,9 @@
                 updateSno();
             });
 
-            
             // Transportation button reveals section and adds first row if empty
             addTransportationBtn.addEventListener('click', () => {
                 transportationSection.classList.remove('hidden');
-            
-                // If no transportation rows exist, create the first one
                 if (transportationItems.children.length === 0) {
                     const firstRow = createTransportationRow(1);
                     transportationItems.appendChild(firstRow);
