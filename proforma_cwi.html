@@ -1,1049 +1,741 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Proforma Invoice</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            font-size: 14px;
-            color: #333;
-        }
-        address { font-style: normal; }
-        [contenteditable="true"] {
-            display: inline-block; min-width: 50px; border-bottom: 1px dashed #c1d6e1;
-            padding: 2px; outline: none; cursor: text; transition: all 0.2s;
-        }
-        [contenteditable="true"]:hover, [contenteditable="true"]:focus { border-bottom-color: #004343; background-color: #f0f8ff; }
-        input, select {
-            border: 1px solid #c1d6e1; padding: 2px 4px; border-radius: 4px; outline: none;
-            transition: all 0.2s;
-        }
-        input:hover, select:hover, input:focus, select:focus { border-color: #004343; background-color: #f0f8ff; }
-        .message-box {
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-            background-color: #004343; color: white; padding: 1rem 2rem; border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); z-index: 1000; display: none;
-            animation: fadeInOut 3s forwards; font-weight: 500;
-        }
-        @keyframes fadeInOut {
-            0%, 100% { opacity: 0; transform: translateX(-50%) scale(0.9); }
-            10%, 90% { opacity: 1; transform: translateX(-50%) scale(1); }
-        }
-        
-        /* A4 Paper Optimization for printing */
-        .invoice-container {
-            width: 210mm;
-            min-height: 297mm;
-            margin: 0 auto;
-            padding: 20mm;
-            box-shadow: none;
-        }
-        .invoice-container, body { background-color: white; }
-
-        /* Table Layout for both screen and print */
-        .table-container table {
-            table-layout: fixed;
-            width: 100%;
-        }
-        .table-container table th {
-            white-space: normal;
-            overflow-wrap: anywhere;
-        }
-
-        /* Screen-specific styling */
-        @media screen {
-            .customer-info { display: flex; flex-direction: column; }
-            @media (min-width: 768px) {
-                .customer-info { flex-direction: row; }
-            }
-        }
-
-        @media print {
-            @page { size: A4; margin: 34mm 10mm 10mm 10mm; }
-            @page:first { margin: 10mm 10mm 10mm 10mm; }
-            body { margin: 0; font-size: 12px; color: #000; }
-            .invoice-container {
-                width: 100%; min-height: 0; padding: 0; box-shadow: none;
-                -webkit-print-color-adjust: exact; print-color-adjust: exact;
-            }
-            .print-keep-together { break-inside: avoid; page-break-inside: avoid; }
-            #finalSection { min-height: 55mm; }
-            #termsBlock{ break-inside: avoid; page-break-inside: avoid; }
-            .keep-with-next { break-after: avoid; page-break-after: avoid; }
-            #items-summary tr:first-child { break-before: avoid; page-break-before: avoid; }
-            .no-print, .add-remove-buttons { display: none !important; }
-            .print-hide-if-empty.hidden-for-print { display: none !important; }
-            [contenteditable="true"], input, select { border: none !important; background-color: transparent !important; padding: 0; }
-            .delete-item-btn { display: none; }
-            thead { display: table-header-group; }
-            tr, tfoot { page-break-inside: avoid; }
-            .item-particulars { white-space: pre-wrap; word-wrap: break-word; text-align: left !important; display: block !important; }
-            footer{ page-break-before: auto !important; break-inside: avoid; page-break-inside: avoid; }
-            .customer-info { display: flex; flex-direction: row; justify-content: space-between; gap: 16px; }
-            .open-features-btn { display: none !important; }
-        }
-
-        /* Modal Styles */
-        .modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.5); display: flex;
-            justify-content: center; align-items: center; z-index: 1000;
-        }
-        .modal-content {
-            background-color: white; padding: 2rem; border-radius: 8px;
-            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.2); width: 90%; max-width: 600px;
-            max-height: 90vh; overflow-y: auto;
-        }
-    </style>
-    <script>
-        tailwind.config = {
-            theme: { extend: { colors: { 'primary-dark': '#004343', 'secondary-accent': '#009a7b', 'light-accent': '#11c99d', 'dark-shade': '#0a5e5e' }}}
-        }
-    </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Proforma Invoice</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body{font-family:'Poppins',sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-size:14px;color:#333}
+    address{font-style:normal}
+    [contenteditable="true"]{display:inline-block;min-width:50px;border-bottom:1px dashed #c1d6e1;padding:2px;outline:none;cursor:text;transition:all .2s}
+    [contenteditable="true"]:hover,[contenteditable="true"]:focus{border-bottom-color:#004343;background-color:#f0f8ff}
+    input,select{border:1px solid #c1d6e1;padding:2px 4px;border-radius:4px;outline:none;transition:all .2s}
+    input:hover,select:hover,input:focus,select:focus{border-color:#004343;background-color:#f0f8ff}
+    .message-box{position:fixed;top:20px;left:50%;transform:translateX(-50%);background-color:#004343;color:#fff;padding:1rem 2rem;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,.2);z-index:1000;display:none;animation:fadeInOut 3s forwards;font-weight:500}
+    @keyframes fadeInOut{0%,100%{opacity:0;transform:translateX(-50%) scale(.9)}10%,90%{opacity:1;transform:translateX(-50%) scale(1)}}
+    .invoice-container{width:210mm;min-height:297mm;margin:0 auto;padding:20mm;box-shadow:none}
+    .invoice-container,body{background-color:#fff}
+    .table-container table{table-layout:fixed;width:100%}
+    .table-container table th{white-space:normal;overflow-wrap:anywhere}
+    @media screen{
+      .customer-info{display:flex;flex-direction:column}
+      @media (min-width:768px){.customer-info{flex-direction:row}}
+    }
+    @media print{
+      @page{size:A4;margin:34mm 10mm 10mm 10mm}
+      @page:first{margin:10mm}
+      body{margin:0;font-size:12px;color:#000}
+      .invoice-container{width:100%;min-height:0;padding:0;box-shadow:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      .print-keep-together{break-inside:avoid;page-break-inside:avoid}
+      #finalSection{min-height:55mm}
+      #termsBlock{break-inside:avoid;page-break-inside:avoid}
+      .keep-with-next{break-after:avoid;page-break-after:avoid}
+      #items-summary tr:first-child{break-before:avoid;page-break-before:avoid}
+      .no-print,.add-remove-buttons{display:none !important}
+      .print-hide-if-empty.hidden-for-print{display:none !important}
+      [contenteditable="true"],input,select{border:none !important;background-color:transparent !important;padding:0}
+      .delete-item-btn{display:none}
+      thead{display:table-header-group}
+      tr,tfoot{page-break-inside:avoid}
+      .item-particulars{white-space:pre-wrap;word-wrap:break-word;text-align:left !important;display:block !important}
+      footer{page-break-before:auto !important;break-inside:avoid;page-break-inside:avoid}
+      .customer-info{display:flex;flex-direction:row;justify-content:space-between;gap:16px}
+      .open-features-btn{display:none !important}
+    }
+    .modal{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,.5);display:flex;justify-content:center;align-items:center;z-index:1000}
+    .modal-content{background-color:#fff;padding:2rem;border-radius:8px;box-shadow:0 4px 25px rgba(0,0,0,.2);width:90%;max-width:600px;max-height:90vh;overflow-y:auto}
+  </style>
+  <script>
+    tailwind.config={theme:{extend:{colors:{'primary-dark':'#004343','secondary-accent':'#009a7b','light-accent':'#11c99d','dark-shade':'#0a5e5e'}}}}
+  </script>
 </head>
 <body class="bg-gray-50 text-gray-800 p-4">
-    <div class="no-print mb-4">
-      <button onclick="window.location.href='index.html'" 
-              class="bg-primary-dark text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-dark-shade transition-colors">
-        ← Back to Home
-      </button>
-    </div>
+  <div class="no-print mb-4">
+    <button onclick="window.location.href='index.html'" class="bg-primary-dark text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-dark-shade transition-colors">← Back to Home</button>
+  </div>
 
-    <div id="message-box" class="message-box"></div>
+  <div id="message-box" class="message-box"></div>
 
-    <div class="invoice-container max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-2xl">
-        <header class="flex flex-col md:flex-row justify-between items-start border-b-2 border-primary-dark pb-6 mb-6">
-            <div class="w-full md:w-1/2 mb-6 md:mb-0">
-                <div class="flex items-center mb-2">
-                    <img src="logo_cwi.png" alt="Cochin Wood Industries Logo" class="w-12 h-12 rounded-full object-cover shadow-md mr-4" onerror="this.onerror=null;this.src='https://placehold.co/48x48/004343/ffffff?text=CWI';">
-                    <h2 class="text-lg font-bold text-teal-600">Cochin Wood Industries Private Limited</h2>
-                </div>
-                <address class="text-xs text-dark-shade leading-snug pl-16">
-                    <p>Thoppilan Building, 146/A, Thuruthy, Kuruppampady,<br>Ernakulam, Kerala – 683545, India</p>
-                    <p class="mt-1">Phone: <span class="font-semibold">+91 9567410175</span> | E-Mail: <span class="font-semibold">info@cochinwood.in</span></p>
-                    <p class="mt-1">GSTIN: <span class="font-semibold">32AAJCC9689H1Z5</span></p>
-                </address>
-            </div>
-            
-            <div class="flex flex-col items-start md:items-end w-full md:w-1/2">
-                <h1 class="text-3xl font-extrabold text-primary-dark mb-4">PROFORMA INVOICE</h1>
-                <div class="w-full border-l-4 border-light-accent pl-4 py-3 rounded-md">
-                    <div class="flex justify-between items-center mb-1"><strong class="text-sm font-bold text-primary-dark mr-2">P.I. No:</strong> <span id="invoiceNumber" contenteditable="true" class="text-right flex-grow font-semibold min-w-[120px]" aria-label="Proforma Invoice Number"></span></div>
-                    <div class="flex justify-between items-center mb-1"><strong class="text-sm font-bold text-primary-dark mr-2">Date:</strong> <input type="date" id="invoiceDate" class="w-auto text-right flex-grow"></div>
-                    <div class="flex justify-between items-center mb-1"><strong class="text-sm font-bold text-primary-dark mr-2">Valid Till:</strong> <input type="date" id="validTill" class="w-auto text-right flex-grow"></div>
-                    <div class="flex justify-between items-center mb-1"><strong class="text-sm font-bold text-primary-dark mr-2">Currency:</strong>
-                        <span id="currencyDisplay" class="w-auto text-sm bg-white text-right font-bold">INR (₹)</span>
-                    </div>
-                    <!-- Incoterms moved here -->
-                    <div class="flex justify-between items-center"><strong class="text-sm font-bold text-primary-dark mr-2">Incoterms:</strong>
-                        <select id="incoterms" class="w-auto text-sm bg-gray-50 border border-gray-300 rounded-md p-1">
-                            <option value="EXW" selected>Ex Works (EXW)</option>
-                            <option value="DAP">Delivered at Place (DAP)</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <section class="details-section mb-8 text-sm">
-            <div class="customer-info w-full gap-4 space-y-6 md:space-y-0">
-                <div class="w-full md:w-1/3 border-l-4 border-secondary-accent pl-4 py-3 rounded-md ">
-                    <strong class="block mb-2 text-base font-bold text-primary-dark">Customer Details:</strong>
-                    <div class="space-y-1 text-xs">
-                        <p>Name: <span id="clientName" contenteditable="true" class="font-semibold" aria-label="Customer Name"></span></p>
-                        <p>Company: <span id="clientCompany" contenteditable="true" class="font-semibold" aria-label="Customer Company"></span></p>
-                        <p>GSTIN: <span id="clientGSTIN" contenteditable="true" class="font-semibold" aria-label="Customer GSTIN"></span></p>
-                    </div>
-                </div>
-
-                <div class="w-full md:w-1/3 border-l-4 border-secondary-accent pl-4 py-3 rounded-md">
-                    <strong class="block mb-2 text-base font-bold text-primary-dark">Billing Address:</strong>
-                    <div class="space-y-1 text-xs">
-                        <p>Address: <span id="billingAddressLine" contenteditable="true" class="font-semibold" aria-label="Billing Address"></span></p>
-                        <p>District:
-                            <select id="billingDistrictSelect" class="bg-transparent border-none p-0 inline-block w-28 font-semibold" disabled>
-                                <option value="">Select District</option>
-                            </select>
-                        </p>
-                        <p>State/UT:
-                            <select id="billingStateSelect" class="bg-transparent border-none p-0 inline-block w-28 font-semibold">
-                                <option value="">Select State/UT</option>
-                            </select>
-                        </p>
-                    </div>
-                </div>
-
-                <div class="w-full md:w-1/3 border-l-4 border-secondary-accent pl-4 py-3 rounded-md">
-                    <strong class="block mb-2 text-base font-bold text-primary-dark">Shipping Address:</strong>
-                    <div class="space-y-1 text-xs">
-                        <p>Address: <span id="shippingAddressLine" contenteditable="true" class="font-semibold" aria-label="Shipping Address"></span></p>
-                        <p>District:
-                            <select id="shippingDistrictSelect" class="bg-transparent border-none p-0 inline-block w-28 font-semibold" disabled>
-                                <option value="">Select District</option>
-                            </select>
-                        </p>
-                        <p>State/UT:
-                            <select id="shippingStateSelect" class="bg-transparent border-none p-0 inline-block w-28 font-semibold">
-                                <option value="">Select State/UT</option>
-                            </select>
-                        </p>
-                    </div>
-                    <button id="copyBillingBtn" class="mt-4 bg-gray-200 text-gray-700 font-medium py-1 px-3 rounded-lg text-xs hover:bg-gray-300 no-print">
-                        Copy from Billing
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <main>
-            <!-- ITEMS TABLE -->
-            <div class="table-container">
-                <table class="w-full border-collapse mb-6 bg-gray-50 text-sm rounded-lg overflow-hidden shadow-sm">
-                    <thead class="bg-primary-dark text-white text-left">
-                        <tr>
-                            <th scope="col" class="py-3 px-2" style="width: 6%;">S.No</th>
-                            <th scope="col" class="py-3 px-2" style="width: 30%;">Particulars</th>
-                            <th scope="col" class="py-3 px-2" style="width: 10%;">Thk<br>(mm)</th>
-                            <th scope="col" class="py-3 px-2" style="width: 7%;">Len<br>(ft)</th>
-                            <th scope="col" class="py-3 px-2" style="width: 7%;">Brd<br>(ft)</th>
-                            <th scope="col" class="py-3 px-2" style="width: 9%;">Qty<br>(Sht)</th>
-                            <th scope="col" class="py-3 px-2" style="width: 10%;">Qty<br>(SqFt)</th>
-                            <th scope="col" class="py-3 px-2" style="width: 10%;">Rate/<br>SqFt</th>
-                            <th scope="col" class="py-3 px-2 text-right" style="width: 12%;">Amount</th>
-                            <th scope="col" class="py-3 px-2 no-print" style="width: 5%;"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="invoiceItems"></tbody>
-                    <tbody>
-                        <tr class="font-bold">
-                            <td colspan="8" class="border-t pt-4 pr-4 text-right">Subtotal</td>
-                            <td id="subtotalAmount" class="border-t pt-4 pr-2 text-right">₹0.00</td>
-                            <td class="border-t pt-4 no-print"></td>
-                        </tr>
-                        <tr class="font-bold">
-                            <td colspan="8" class="pt-2 pr-4 text-right">
-                                <div class="flex justify-end items-center space-x-2">
-                                    <span>GST</span>
-                                    <select id="gstRateSelect" class="w-auto text-sm bg-gray-50 border border-gray-300 rounded-md p-1">
-                                        <option value="0.001">Supply to Merchant Exporter (0.1%)</option>
-                                        <option value="0.05">5%</option>
-                                        <option value="0.12">12%</option>
-                                        <option value="0.18" selected>18%</option>
-                                        <option value="0.28">28%</option>
-                                    </select>
-                                </div>
-                            </td>
-                            <td id="taxAmount" class="pt-2 pr-2 text-right">₹0.00</td>
-                            <td class="pt-2 no-print"></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Add Product (+) above Transportation -->
-            <div class="no-print mt-2 mb-6 text-right add-remove-buttons">
-                <button id="addItemBtn"
-                        class="w-8 h-8 flex items-center justify-center bg-secondary-accent hover:bg-dark-shade text-white font-bold rounded-full shadow-md transition-transform hover:scale-110"
-                        aria-label="Add new item row">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"></path>
-                    </svg>
-                </button>
-            </div>
-            
-            <!-- TRANSPORTATION -->
-            <button id="addTransportationBtn" class="bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg text-sm hover:bg-gray-300 no-print mb-6">
-                Add Transportation
-            </button>
-
-            <div id="transportationSection" class="hidden">
-                <div class="table-container mt-8">
-                    <table class="w-full border-collapse mb-6 bg-gray-50 text-sm rounded-lg overflow-hidden shadow-sm">
-                        <thead class="bg-primary-dark text-white text-left">
-                          <tr>
-                            <th scope="col" class="py-3 px-2" style="width: 6%;">S.No</th>
-                            <th scope="col" class="py-3 px-2" style="width: 18%;">Dispatch Point</th>
-                            <th scope="col" class="py-3 px-2" style="width: 18%;">Destination</th>
-                            <th scope="col" class="py-3 px-2" style="width: 14%;">Distance<br>(km)</th>
-                            <th scope="col" class="py-3 px-2" style="width: 14%;">Weight<br>(Tonne)</th>
-                            <th scope="col" class="py-3 px-2" style="width: 14%;">Rate/<br>Tonne</th>
-                            <th scope="col" class="py-3 px-2 text-right" style="width: 12%;">Amount</th>
-                            <th scope="col" class="py-3 px-2 no-print" style="width: 4%;"></th>
-                          </tr>
-                        </thead>
-
-                        <tbody id="transportationItems"></tbody>
-                        <tfoot>
-                            <tr class="font-bold">
-                                <td colspan="6" class="border-t pt-4 pr-4 text-right">Subtotal</td>
-                                <td id="transportationSubtotalAmount" class="border-t pt-4 pr-2 text-right">₹0.00</td>
-                                <td class="border-t pt-4 no-print"></td>
-                            </tr>
-                            <tr class="font-bold">
-                                <td colspan="6" class="pt-2 pr-4 text-right">
-                                    <div class="flex justify-end items-center space-x-2">
-                                        <span>GST</span>
-                                        <select id="transportationGstRateSelect" class="w-auto text-sm bg-gray-50 border border-gray-300 rounded-md p-1">
-                                            <option value="0.05">5%</option>
-                                            <option value="0.12">12%</option>
-                                            <option value="0.18" selected>18%</option>
-                                            <option value="0.28">28%</option>
-                                        </select>
-                                    </div>
-                                </td>
-                                <td id="transportationTaxAmount" class="pt-2 pr-2 text-right">₹0.00</td>
-                                <td class="pt-2 no-print"></td>
-                            </tr>
-                            <tr class="no-print">
-                                <td colspan="8" class="pt-4 pb-2 text-right add-remove-buttons">
-                                    <button id="addTransportationItemBtn" class="w-8 h-8 flex items-center justify-center bg-secondary-accent hover:bg-dark-shade text-white font-bold rounded-full shadow-md transition-transform hover:scale-110" aria-label="Add new transportation row">
-                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2H6a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"></path></svg>
-                                    </button>
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-
-          <div id="finalSection" class="print-keep-together">
-
-            <div class="table-container">
-                <table class="w-full border-collapse mb-6 bg-gray-50 text-sm rounded-lg overflow-hidden shadow-sm">
-                    <tfoot>
-                        <tr class="text-base font-extrabold">
-                            <td colspan="8" class="border-t-2 border-primary-dark pt-4 pr-2 text-right">Total Weight (kg)</td>
-                            <td id="totalWeightAmount" class="border-t-2 border-primary-dark pt-4 pr-2 text-right">0.00</td>
-                            <td class="border-t-2 border-primary-dark pt-4 no-print"></td>
-                        </tr>
-                        <tr>
-                            <td colspan="10" class="text-xs italic text-gray-600 pt-1">
-                                * Weight figures are tentative only; variations can occur due to timber age and density.
-                            </td>
-                        </tr>
-
-                        <tr class="text-lg font-extrabold">
-                            <td colspan="8" class="border-t-2 border-primary-dark pt-4 pr-2 text-right">Grand Total</td>
-                            <td id="grandTotalAmount" class="border-t-2 border-primary-dark pt-4 pr-2 text-right">₹0.00</td>
-                            <td class="border-t-2 border-primary-dark pt-4 no-print"></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-          
-            <div class="flex justify-between mt-16 gap-8">
-              <div class="w-5/12 text-center">
-                <div id="preparedByName" contenteditable="true" class="text-base font-semibold mb-4" aria-label="Prepared By Name">Name</div>
-                <div class="border-t border-primary-dark pt-3 text-sm">Prepared By</div>
-              </div>
-              <div class="w-5/12 text-center">
-                <div id="salesManagerName" contenteditable="true" class="text-base font-semibold mb-4" aria-label="Sales Manager Name">Name</div>
-                <div class="border-t border-primary-dark pt-3 text-sm">Sales Manager</div>
-              </div>
-            </div>
-
-          </div>
-
-        </main>
-        
-        <footer class="mt-8">
-            <div class="flex flex-col md:flex-row justify-between">
-                <div class="w-full md:w-4/12 border-l-4 border-secondary-accent pl-4 py-3 rounded-md mb-6 md:mb-0">
-                    <strong class="block mb-2 text-sm font-bold text-primary-dark">Bank Details:</strong>
-                    <address class="text-xs leading-snug">
-                        <p>A/C Name: <span class="font-semibold">Cochin Wood Industries Pvt Ltd</span></p>
-                        <p>A/C No: <span class="font-semibold">074305002785</span></p>
-                        <p>Bank: <span class="font-semibold">ICICI Bank, Perumbavoor</span></p>
-                        <p>IFSC: <span class="font-semibold">ICIC0000743</span></p>
-                    </address>
-                    <div class="flex flex-col items-center mt-4 text-center">
-                        <strong class="block mb-1 text-sm font-bold text-primary-dark">UPI ID:</strong>
-                        <p class="text-xs font-semibold">cochinwoodindustriesprivatelimited.ibz<br>@icici</p>
-                        <img src="qrcode_cwi.png" alt="UPI QR Code" class="w-24 h-24 mt-2">
-                        <p class="text-xs font-semibold mt-1">Scan & Pay</p>
-                        <p class="text-[10px] italic text-gray-600">*Always verify the company name before making a payment.</p>
-                    </div>
-                </div>
-
-                <div id="termsBlock" class="w-full md:w-7/12 border-l-4 border-secondary-accent pl-4 py-3 rounded-md">
-                    <strong class="block mb-2 text-sm font-bold text-primary-dark">Terms & Conditions:</strong>
-                    <ul class="list-disc pl-4 mt-2 text-xs space-y-1">
-                        <li>**Pricing:** Valid for 3 days from quote/proforma date.</li>
-                        <li>**Payment:** 50% advance on order acceptance; balance due post-production, pre-dispatch.</li>
-                        <li>**Delivery:** 7-15 days (estimated). Shipping charges apply. Shipping risk transfers upon transporter/carrier.</li>
-                        <li>**Inspection:** Quality inspection before loading. Report defects within 5 days of receipt.</li>
-                        <li>**Warranty:** Point of Sale warranty.</li>
-                        <li>**Liability:** No indirect damages. Liability limited to purchase amount.</li>
-                        <li>**Confidentiality:** Mutual confidentiality agreement.</li>
-                        <li>**Tolerance:** +/-5% loading tolerance.</li>
-                        <li>**Law:** Governed by Indian law. Disputes resolved in Perumbavoor Jurisdiction.</li>
-                        <li>**Force Majeure:** Not liable for delays due to uncontrollable events like natural disasters, pandemics, governmental actions, etc.</li>
-                        <li id="orderSpecificTandC_li" class="print-hide-if-empty">**Order Specific T&C:** <span id="orderSpecificTandC" contenteditable="true" class="font-semibold" aria-label="Order specific terms and conditions">N/A</span></li>
-                    </ul>
-                </div>
-            </div>
-        </footer>
-    </div>
-    
-    <div id="productOptionsModal" class="modal hidden">
-        <div class="modal-content">
-            <h3 class="text-xl font-bold text-primary-dark mb-4">Select Product Features</h3>
-            <div id="productOptionsContent" class="space-y-4"></div>
-            <div class="flex justify-end space-x-2 mt-6">
-                <button id="cancelModalBtn" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">Cancel</button>
-                <button id="saveModalBtn" class="bg-secondary-accent text-white px-4 py-2 rounded-lg hover:bg-dark-shade">Save</button>
-            </div>
+  <div class="invoice-container max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-2xl">
+    <header class="flex flex-col md:flex-row justify-between items-start border-b-2 border-primary-dark pb-6 mb-6">
+      <div class="w-full md:w-1/2 mb-6 md:mb-0">
+        <div class="flex items-center mb-2">
+          <img src="logo_cwi.png" alt="Cochin Wood Industries Logo" class="w-12 h-12 rounded-full object-cover shadow-md mr-4" onerror="this.onerror=null;this.src='https://placehold.co/48x48/004343/ffffff?text=CWI';">
+          <h2 class="text-lg font-bold text-teal-600">Cochin Wood Industries Private Limited</h2>
         </div>
-    </div>
+        <address class="text-xs text-dark-shade leading-snug pl-16">
+          <p>Thoppilan Building, 146/A, Thuruthy, Kuruppampady,<br>Ernakulam, Kerala – 683545, India</p>
+          <p class="mt-1">Phone: <span class="font-semibold">+91 9567410175</span> | E-Mail: <span class="font-semibold">info@cochinwood.in</span></p>
+          <p class="mt-1">GSTIN: <span class="font-semibold">32AAJCC9689H1Z5</span></p>
+        </address>
+      </div>
 
-    <datalist id="product-list"></datalist>
+      <div class="flex flex-col items-start md:items-end w-full md:w-1/2">
+        <h1 class="text-3xl font-extrabold text-primary-dark mb-4">PROFORMA INVOICE</h1>
+        <div class="w-full border-l-4 border-light-accent pl-4 py-3 rounded-md">
+          <div class="flex justify-between items-center mb-1"><strong class="text-sm font-bold text-primary-dark mr-2">P.I. No:</strong><span id="invoiceNumber" contenteditable="true" class="text-right flex-grow font-semibold min-w-[120px]" aria-label="Proforma Invoice Number"></span></div>
+          <div class="flex justify-between items-center mb-1"><strong class="text-sm font-bold text-primary-dark mr-2">Date:</strong><input type="date" id="invoiceDate" class="w-auto text-right flex-grow"></div>
+          <div class="flex justify-between items-center mb-1"><strong class="text-sm font-bold text-primary-dark mr-2">Valid Till:</strong><input type="date" id="validTill" class="w-auto text-right flex-grow"></div>
+          <div class="flex justify-between items-center mb-1"><strong class="text-sm font-bold text-primary-dark mr-2">Currency:</strong><span id="currencyDisplay" class="w-auto text-sm bg-white text-right font-bold">INR (₹)</span></div>
+          <div class="flex justify-between items-center"><strong class="text-sm font-bold text-primary-dark mr-2">Incoterms:</strong>
+            <select id="incoterms" class="w-auto text-sm bg-gray-50 border border-gray-300 rounded-md p-1">
+              <option value="EXW" selected>Ex Works (EXW)</option>
+              <option value="DAP">Delivered at Place (DAP)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </header>
 
-    <div class="no-print mt-6 text-center">
-        <button id="saveToSheetBtn" class="bg-secondary-accent text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-dark-shade transition-colors">
-            Save to Google Sheet
+    <section class="details-section mb-8 text-sm">
+      <div class="customer-info w-full gap-4 space-y-6 md:space-y-0">
+        <div class="w-full md:w-1/3 border-l-4 border-secondary-accent pl-4 py-3 rounded-md ">
+          <strong class="block mb-2 text-base font-bold text-primary-dark">Customer Details:</strong>
+          <div class="space-y-1 text-xs">
+            <p>Name: <span id="clientName" contenteditable="true" class="font-semibold" aria-label="Customer Name"></span></p>
+            <p>Company: <span id="clientCompany" contenteditable="true" class="font-semibold" aria-label="Customer Company"></span></p>
+            <p>GSTIN: <span id="clientGSTIN" contenteditable="true" class="font-semibold" aria-label="Customer GSTIN"></span></p>
+          </div>
+        </div>
+
+        <div class="w-full md:w-1/3 border-l-4 border-secondary-accent pl-4 py-3 rounded-md">
+          <strong class="block mb-2 text-base font-bold text-primary-dark">Billing Address:</strong>
+          <div class="space-y-1 text-xs">
+            <p>Address: <span id="billingAddressLine" contenteditable="true" class="font-semibold" aria-label="Billing Address"></span></p>
+            <p>District:
+              <select id="billingDistrictSelect" class="bg-transparent border-none p-0 inline-block w-28 font-semibold" disabled>
+                <option value="">Select District</option>
+              </select>
+            </p>
+            <p>State/UT:
+              <select id="billingStateSelect" class="bg-transparent border-none p-0 inline-block w-28 font-semibold">
+                <option value="">Select State/UT</option>
+              </select>
+            </p>
+          </div>
+        </div>
+
+        <div class="w-full md:w-1/3 border-l-4 border-secondary-accent pl-4 py-3 rounded-md">
+          <strong class="block mb-2 text-base font-bold text-primary-dark">Shipping Address:</strong>
+          <div class="space-y-1 text-xs">
+            <p>Address: <span id="shippingAddressLine" contenteditable="true" class="font-semibold" aria-label="Shipping Address"></span></p>
+            <p>District:
+              <select id="shippingDistrictSelect" class="bg-transparent border-none p-0 inline-block w-28 font-semibold" disabled>
+                <option value="">Select District</option>
+              </select>
+            </p>
+            <p>State/UT:
+              <select id="shippingStateSelect" class="bg-transparent border-none p-0 inline-block w-28 font-semibold">
+                <option value="">Select State/UT</option>
+              </select>
+            </p>
+          </div>
+          <button id="copyBillingBtn" class="mt-4 bg-gray-200 text-gray-700 font-medium py-1 px-3 rounded-lg text-xs hover:bg-gray-300 no-print">Copy from Billing</button>
+        </div>
+      </div>
+    </section>
+
+    <main>
+      <!-- ITEMS TABLE -->
+      <div class="table-container">
+        <table class="w-full border-collapse mb-6 bg-gray-50 text-sm rounded-lg overflow-hidden shadow-sm">
+          <thead class="bg-primary-dark text-white text-left">
+            <tr>
+              <th class="py-3 px-2" style="width:6%;">S.No</th>
+              <th class="py-3 px-2" style="width:30%;">Particulars</th>
+              <th class="py-3 px-2" style="width:10%;">Thk<br>(mm)</th>
+              <th class="py-3 px-2" style="width:7%;">Len<br>(ft)</th>
+              <th class="py-3 px-2" style="width:7%;">Brd<br>(ft)</th>
+              <th class="py-3 px-2" style="width:9%;">Qty<br>(Sht)</th>
+              <th class="py-3 px-2" style="width:10%;">Qty<br>(SqFt)</th>
+              <th class="py-3 px-2" style="width:10%;">Rate/<br>SqFt</th>
+              <th class="py-3 px-2 text-right" style="width:12%;">Amount</th>
+              <th class="py-3 px-2 no-print" style="width:5%;"></th>
+            </tr>
+          </thead>
+          <tbody id="invoiceItems"></tbody>
+          <tbody>
+            <tr class="font-bold">
+              <td colspan="8" class="border-t pt-4 pr-4 text-right">Subtotal</td>
+              <td id="subtotalAmount" class="border-t pt-4 pr-2 text-right">₹0.00</td>
+              <td class="border-t pt-4 no-print"></td>
+            </tr>
+            <tr class="font-bold">
+              <td colspan="8" class="pt-2 pr-4 text-right">
+                <div class="flex justify-end items-center space-x-2">
+                  <span>GST</span>
+                  <select id="gstRateSelect" class="w-auto text-sm bg-gray-50 border border-gray-300 rounded-md p-1">
+                    <option value="0.001">Supply to Merchant Exporter (0.1%)</option>
+                    <option value="0.05">5%</option>
+                    <option value="0.12">12%</option>
+                    <option value="0.18" selected>18%</option>
+                    <option value="0.28">28%</option>
+                  </select>
+                </div>
+              </td>
+              <td id="taxAmount" class="pt-2 pr-2 text-right">₹0.00</td>
+              <td class="pt-2 no-print"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Add Product (+) -->
+      <div class="no-print mt-2 mb-6 text-right add-remove-buttons">
+        <button id="addItemBtn" class="w-8 h-8 inline-flex items-center justify-center bg-secondary-accent hover:bg-dark-shade text-white font-bold rounded-full shadow-md transition-transform hover:scale-110" aria-label="Add new item row">
+          <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"/></svg>
         </button>
-        <button id="printBtn" class="bg-gray-500 text-white font-bold py-2 px-4 ml-4 rounded-lg shadow-md hover:bg-gray-700 transition-colors" onclick="window.print();">
-            Print Invoice
-        </button>
+      </div>
+
+      <!-- TRANSPORTATION -->
+      <button id="addTransportationBtn" class="bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg text-sm hover:bg-gray-300 no-print mb-6">
+        Add Transportation
+      </button>
+
+      <div id="transportationSection" class="hidden">
+        <div class="table-container mt-8">
+          <table class="w-full border-collapse mb-6 bg-gray-50 text-sm rounded-lg overflow-hidden shadow-sm">
+            <thead class="bg-primary-dark text-white text-left">
+              <tr>
+                <th class="py-3 px-2" style="width:6%;">S.No</th>
+                <th class="py-3 px-2" style="width:18%;">Dispatch Point</th>
+                <th class="py-3 px-2" style="width:18%;">Destination</th>
+                <th class="py-3 px-2" style="width:14%;">Distance<br>(km)</th>
+                <th class="py-3 px-2" style="width:14%;">Weight<br>(Tonne)</th>
+                <th class="py-3 px-2" style="width:14%;">Rate/<br>Tonne</th>
+                <th class="py-3 px-2 text-right" style="width:12%;">Amount</th>
+                <th class="py-3 px-2 no-print" style="width:4%;"></th>
+              </tr>
+            </thead>
+            <tbody id="transportationItems"></tbody>
+            <tfoot>
+              <tr class="font-bold">
+                <td colspan="6" class="border-t pt-4 pr-4 text-right">Subtotal</td>
+                <td id="transportationSubtotalAmount" class="border-t pt-4 pr-2 text-right">₹0.00</td>
+                <td class="border-t pt-4 no-print"></td>
+              </tr>
+              <tr class="font-bold">
+                <td colspan="6" class="pt-2 pr-4 text-right">
+                  <div class="flex justify-end items-center space-x-2">
+                    <span>GST</span>
+                    <select id="transportationGstRateSelect" class="w-auto text-sm bg-gray-50 border border-gray-300 rounded-md p-1">
+                      <option value="0.05">5%</option>
+                      <option value="0.12">12%</option>
+                      <option value="0.18" selected>18%</option>
+                      <option value="0.28">28%</option>
+                    </select>
+                  </div>
+                </td>
+                <td id="transportationTaxAmount" class="pt-2 pr-2 text-right">₹0.00</td>
+                <td class="pt-2 no-print"></td>
+              </tr>
+              <!-- Fixed add button row (always visible & aligned) -->
+              <tr class="no-print">
+                <td colspan="8" class="pt-4 pb-2">
+                  <div class="flex justify-end">
+                    <button id="addTransportationItemBtn" class="w-9 h-9 inline-flex items-center justify-center bg-secondary-accent hover:bg-dark-shade text-white font-bold rounded-full shadow-md transition-transform hover:scale-110" aria-label="Add new transportation row" type="button">
+                      <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <div id="finalSection" class="print-keep-together">
+        <div class="table-container">
+          <table class="w-full border-collapse mb-6 bg-gray-50 text-sm rounded-lg overflow-hidden shadow-sm">
+            <tfoot>
+              <tr class="text-base font-extrabold">
+                <td colspan="8" class="border-t-2 border-primary-dark pt-4 pr-2 text-right">Total Weight (kg)</td>
+                <td id="totalWeightAmount" class="border-t-2 border-primary-dark pt-4 pr-2 text-right">0.00</td>
+                <td class="border-t-2 border-primary-dark pt-4 no-print"></td>
+              </tr>
+              <tr>
+                <td colspan="10" class="text-xs italic text-gray-600 pt-1">
+                  * Weight figures are tentative only; variations can occur due to timber age and density.
+                </td>
+              </tr>
+              <tr class="text-lg font-extrabold">
+                <td colspan="8" class="border-t-2 border-primary-dark pt-4 pr-2 text-right">Grand Total</td>
+                <td id="grandTotalAmount" class="border-t-2 border-primary-dark pt-4 pr-2 text-right">₹0.00</td>
+                <td class="border-t-2 border-primary-dark pt-4 no-print"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div class="flex justify-between mt-16 gap-8">
+          <div class="w-5/12 text-center">
+            <div id="preparedByName" contenteditable="true" class="text-base font-semibold mb-4" aria-label="Prepared By Name">Name</div>
+            <div class="border-t border-primary-dark pt-3 text-sm">Prepared By</div>
+          </div>
+          <div class="w-5/12 text-center">
+            <div id="salesManagerName" contenteditable="true" class="text-base font-semibold mb-4" aria-label="Sales Manager Name">Name</div>
+            <div class="border-t border-primary-dark pt-3 text-sm">Sales Manager</div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="mt-8">
+      <div class="flex flex-col md:flex-row justify-between">
+        <div class="w-full md:w-4/12 border-l-4 border-secondary-accent pl-4 py-3 rounded-md mb-6 md:mb-0">
+          <strong class="block mb-2 text-sm font-bold text-primary-dark">Bank Details:</strong>
+          <address class="text-xs leading-snug">
+            <p>A/C Name: <span class="font-semibold">Cochin Wood Industries Pvt Ltd</span></p>
+            <p>A/C No: <span class="font-semibold">074305002785</span></p>
+            <p>Bank: <span class="font-semibold">ICICI Bank, Perumbavoor</span></p>
+            <p>IFSC: <span class="font-semibold">ICIC0000743</span></p>
+          </address>
+          <div class="flex flex-col items-center mt-4 text-center">
+            <strong class="block mb-1 text-sm font-bold text-primary-dark">UPI ID:</strong>
+            <p class="text-xs font-semibold">cochinwoodindustriesprivatelimited.ibz<br>@icici</p>
+            <img src="qrcode_cwi.png" alt="UPI QR Code" class="w-24 h-24 mt-2">
+            <p class="text-xs font-semibold mt-1">Scan & Pay</p>
+            <p class="text-[10px] italic text-gray-600">*Always verify the company name before making a payment.</p>
+          </div>
+        </div>
+
+        <div id="termsBlock" class="w-full md:w-7/12 border-l-4 border-secondary-accent pl-4 py-3 rounded-md">
+          <strong class="block mb-2 text-sm font-bold text-primary-dark">Terms & Conditions:</strong>
+          <ul class="list-disc pl-4 mt-2 text-xs space-y-1">
+            <li>**Pricing:** Valid for 3 days from quote/proforma date.</li>
+            <li>**Payment:** 50% advance on order acceptance; balance due post-production, pre-dispatch.</li>
+            <li>**Delivery:** 7-15 days (estimated). Shipping charges apply. Shipping risk transfers upon transporter/carrier.</li>
+            <li>**Inspection:** Quality inspection before loading. Report defects within 5 days of receipt.</li>
+            <li>**Warranty:** Point of Sale warranty.</li>
+            <li>**Liability:** No indirect damages. Liability limited to purchase amount.</li>
+            <li>**Confidentiality:** Mutual confidentiality agreement.</li>
+            <li>**Tolerance:** +/-5% loading tolerance.</li>
+            <li>**Law:** Governed by Indian law. Disputes resolved in Perumbavoor Jurisdiction.</li>
+            <li>**Force Majeure:** Not liable for delays due to uncontrollable events like natural disasters, pandemics, governmental actions, etc.</li>
+            <li id="orderSpecificTandC_li" class="print-hide-if-empty">**Order Specific T&C:** <span id="orderSpecificTandC" contenteditable="true" class="font-semibold" aria-label="Order specific terms and conditions">N/A</span></li>
+          </ul>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Modal -->
+  <div id="productOptionsModal" class="modal hidden">
+    <div class="modal-content">
+      <h3 class="text-xl font-bold text-primary-dark mb-4">Select Product Features</h3>
+      <div id="productOptionsContent" class="space-y-4"></div>
+      <div class="flex justify-end space-x-2 mt-6">
+        <button id="cancelModalBtn" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">Cancel</button>
+        <button id="saveModalBtn" class="bg-secondary-accent text-white px-4 py-2 rounded-lg hover:bg-dark-shade">Save</button>
+      </div>
     </div>
+  </div>
 
-    <script>
-        let productMasterData = []; 
-        window.productMasterData = productMasterData;
-        let currentItemRow;
-        let availableFeatures = [];
+  <datalist id="product-list"></datalist>
 
-        const FT_TO_M = 0.3048;
+  <div class="no-print mt-6 text-center">
+    <button id="saveToSheetBtn" class="bg-secondary-accent text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-dark-shade transition-colors">Save to Google Sheet</button>
+    <button id="printBtn" class="bg-gray-500 text-white font-bold py-2 px-4 ml-4 rounded-lg shadow-md hover:bg-gray-700 transition-colors" onclick="window.print();">Print Invoice</button>
+  </div>
 
-        function computeRowWeightFromValues(lengthFt, breadthFt, thicknessMm, quantity, opts = {}) {
-            const fixedWeight = opts.fixedWeight != null ? Number(opts.fixedWeight) : null;
-            const density = (opts.density != null ? Number(opts.density) : (opts.isMarine ? 700 : 600));
-            if (!isNaN(fixedWeight) && fixedWeight > 0) {
-                return (Number(quantity) || 0) * fixedWeight;
-            }
-            const Lm = (Number(lengthFt) || 0) * FT_TO_M;
-            const Bm = (Number(breadthFt) || 0) * FT_TO_M;
-            const thicknessM = (Number(thicknessMm) || 0) / 1000;
-            const qty = Number(quantity) || 0;
-            const area = Lm * Bm;
-            const perSheet = density * thicknessM * area;
-            return perSheet * qty;
-        }
+  <script>
+    let productMasterData=[]; window.productMasterData=productMasterData;
+    let currentItemRow; let availableFeatures=[];
+    const FT_TO_M=0.3048;
 
-        function getRowWeightHints(tr, selectedProductName = "") {
-            const fixedWeight = tr?.dataset?.fixedWeight ? Number(tr.dataset.fixedWeight) : null;
-            const density = tr?.dataset?.density ? Number(tr.dataset.density) : null;
-            const isMarine = /marine/i.test(selectedProductName || "");
-            return { fixedWeight, density, isMarine };
-        }
+    function computeRowWeightFromValues(lengthFt,breadthFt,thicknessMm,quantity,opts={}){
+      const fixedWeight=opts.fixedWeight!=null?Number(opts.fixedWeight):null;
+      const density=(opts.density!=null?Number(opts.density):(opts.isMarine?700:600));
+      if(!isNaN(fixedWeight)&&fixedWeight>0){return (Number(quantity)||0)*fixedWeight;}
+      const Lm=(Number(lengthFt)||0)*FT_TO_M;
+      const Bm=(Number(breadthFt)||0)*FT_TO_M;
+      const thicknessM=(Number(thicknessMm)||0)/1000;
+      const qty=Number(quantity)||0;
+      const area=Lm*Bm;
+      const perSheet=density*thicknessM*area;
+      return perSheet*qty;
+    }
+    function getRowWeightHints(tr,selectedProductName=""){
+      const fixedWeight=tr?.dataset?.fixedWeight?Number(tr.dataset.fixedWeight):null;
+      const density=tr?.dataset?.density?Number(tr.dataset.density):null;
+      const isMarine=/marine/i.test(selectedProductName||"");
+      return {fixedWeight,density,isMarine};
+    }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const invoiceItems = document.getElementById('invoiceItems');
-            const addItemBtn = document.getElementById('addItemBtn');
-            const subtotalAmount = document.getElementById('subtotalAmount');
-            const taxAmount = document.getElementById('taxAmount');
-            const grandTotalAmount = document.getElementById('grandTotalAmount');
-            const totalWeightAmount = document.getElementById('totalWeightAmount');
-            const invoiceDate = document.getElementById('invoiceDate');
-            const validTill = document.getElementById('validTill');
-            const billingStateSelect = document.getElementById('billingStateSelect');
-            const billingDistrictSelect = document.getElementById('billingDistrictSelect');
-            const shippingStateSelect = document.getElementById('shippingStateSelect');
-            const shippingDistrictSelect = document.getElementById('shippingDistrictSelect');
-            const copyBillingBtn = document.getElementById('copyBillingBtn');
-            const messageBox = document.getElementById('message-box');
-            const gstRateSelect = document.getElementById('gstRateSelect');
-            const invoiceNumberEl = document.getElementById('invoiceNumber');
-            
-            // Transportation
-            const addTransportationBtn = document.getElementById('addTransportationBtn');
-            const transportationSection = document.getElementById('transportationSection');
-            const addTransportationItemBtn = document.getElementById('addTransportationItemBtn');
-            const transportationItems = document.getElementById('transportationItems');
-            const transportationSubtotalAmount = document.getElementById('transportationSubtotalAmount');
-            const transportationTaxAmount = document.getElementById('transportationTaxAmount');
-            const transportationGstRateSelect = document.getElementById('transportationGstRateSelect');
+    document.addEventListener('DOMContentLoaded',()=>{
+      const invoiceItems=document.getElementById('invoiceItems');
+      const addItemBtn=document.getElementById('addItemBtn');
+      const subtotalAmount=document.getElementById('subtotalAmount');
+      const taxAmount=document.getElementById('taxAmount');
+      const grandTotalAmount=document.getElementById('grandTotalAmount');
+      const totalWeightAmount=document.getElementById('totalWeightAmount');
+      const invoiceDate=document.getElementById('invoiceDate');
+      const validTill=document.getElementById('validTill');
+      const billingStateSelect=document.getElementById('billingStateSelect');
+      const billingDistrictSelect=document.getElementById('billingDistrictSelect');
+      const shippingStateSelect=document.getElementById('shippingStateSelect');
+      const shippingDistrictSelect=document.getElementById('shippingDistrictSelect');
+      const copyBillingBtn=document.getElementById('copyBillingBtn');
+      const messageBox=document.getElementById('message-box');
+      const gstRateSelect=document.getElementById('gstRateSelect');
+      const invoiceNumberEl=document.getElementById('invoiceNumber');
 
-            // Modal
-            const productOptionsModal = document.getElementById('productOptionsModal');
-            const productOptionsContent = document.getElementById('productOptionsContent');
-            const saveModalBtn = document.getElementById('saveModalBtn');
-            const cancelModalBtn = document.getElementById('cancelModalBtn');
+      // Transportation controls
+      const addTransportationBtn=document.getElementById('addTransportationBtn');
+      const transportationSection=document.getElementById('transportationSection');
+      const addTransportationItemBtn=document.getElementById('addTransportationItemBtn');
+      const transportationItems=document.getElementById('transportationItems');
+      const transportationSubtotalAmount=document.getElementById('transportationSubtotalAmount');
+      const transportationTaxAmount=document.getElementById('transportationTaxAmount');
+      const transportationGstRateSelect=document.getElementById('transportationGstRateSelect');
 
-            // --- Date helpers for Valid Till (+15 days) ---
-            function addDaysISO(iso, days) {
-              if (!iso) return '';
-              const d = new Date(iso);
-              d.setDate(d.getDate() + days);
-              const yyyy = d.getFullYear();
-              const mm = String(d.getMonth() + 1).padStart(2, '0');
-              const dd = String(d.getDate()).padStart(2, '0');
-              return `${yyyy}-${mm}-${dd}`;
-            }
-            function syncValidTillFromInvoiceDate() {
-              if (!invoiceDate.value) return;
-              validTill.value = addDaysISO(invoiceDate.value, 15);
-            }
+      // Modal
+      const productOptionsModal=document.getElementById('productOptionsModal');
+      const productOptionsContent=document.getElementById('productOptionsContent');
+      const saveModalBtn=document.getElementById('saveModalBtn');
+      const cancelModalBtn=document.getElementById('cancelModalBtn');
 
-            // Set today's date and auto-fill Valid Till
-            const today = new Date().toISOString().split('T')[0];
-            invoiceDate.value = today;
-            syncValidTillFromInvoiceDate();
+      // Helpers
+      function addDaysISO(iso,days){ if(!iso) return ''; const d=new Date(iso); d.setDate(d.getDate()+days); const yyyy=d.getFullYear(); const mm=String(d.getMonth()+1).padStart(2,'0'); const dd=String(d.getDate()).padStart(2,'0'); return `${yyyy}-${mm}-${dd}`;}
+      function syncValidTillFromInvoiceDate(){ if(!invoiceDate.value) return; validTill.value=addDaysISO(invoiceDate.value,15); }
 
-            // When Date changes later, re-auto-fill Valid Till
-            invoiceDate.addEventListener('change', syncValidTillFromInvoiceDate);
+      const today=new Date().toISOString().split('T')[0];
+      invoiceDate.value=today; syncValidTillFromInvoiceDate();
+      invoiceDate.addEventListener('change',syncValidTillFromInvoiceDate);
 
-            // --- Auto-generate PI No (daily increment) ---
-            function generatePiNo() {
-              const d = new Date();
-              const yyyy = d.getFullYear();
-              const mm = String(d.getMonth() + 1).padStart(2, '0');
-              const dd = String(d.getDate()).padStart(2, '0');
-              const yyyymmdd = `${yyyy}${mm}${dd}`;
-              const key = `piSeq-${yyyymmdd}`;
-              const next = (parseInt(localStorage.getItem(key) || '0', 10) + 1);
-              localStorage.setItem(key, String(next));
-              const seq = String(next).padStart(3, '0');
-              return `CWI-${yyyymmdd}-${seq}`;
-            }
-            if (invoiceNumberEl && invoiceNumberEl.textContent.trim() === '') {
-              invoiceNumberEl.textContent = generatePiNo();
-            }
+      function generatePiNo(){ const d=new Date(); const yyyy=d.getFullYear(); const mm=String(d.getMonth()+1).padStart(2,'0'); const dd=String(d.getDate()).padStart(2,'0'); const yyyymmdd=`${yyyy}${mm}${dd}`; const key=`piSeq-${yyyymmdd}`; const next=(parseInt(localStorage.getItem(key)||'0',10)+1); localStorage.setItem(key,String(next)); const seq=String(next).padStart(3,'0'); return `CWI-${yyyymmdd}-${seq}`;}
+      if(invoiceNumberEl && invoiceNumberEl.textContent.trim()===''){ invoiceNumberEl.textContent=generatePiNo(); }
 
-            const showMessage = (message, duration = 3000) => {
-                messageBox.textContent = message;
-                messageBox.style.display = 'block';
-                setTimeout(() => { messageBox.style.display = 'none'; }, duration);
-            };
+      const showMessage=(message,duration=3000)=>{ messageBox.textContent=message; messageBox.style.display='block'; setTimeout(()=>{messageBox.style.display='none';},duration); };
+      const formatCurrency=(amount)=>`₹${parseFloat(amount).toFixed(2)}`;
 
-            const formatCurrency = (amount) => `₹${parseFloat(amount).toFixed(2)}`;
-
-            // === Totals ===
-            const updateTotals = () => {
-                let subtotal = 0;
-                let totalWeight = 0;
-
-                document.querySelectorAll('.item-row').forEach(row => {
-                    const amountText = row.querySelector('.item-amount').textContent;
-                    subtotal += parseFloat(amountText) || 0;
-
-                    const thk = parseFloat(row.querySelector('.item-thk').value) || 0;
-                    const len = parseFloat(row.querySelector('.item-len').value) || 0;
-                    const brd = parseFloat(row.querySelector('.item-brd').value) || 0;
-                    const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
-                    const selectedName = row.querySelector('.product-search-input')?.value || '';
-                    const hints = getRowWeightHints(row, selectedName);
-                    totalWeight += computeRowWeightFromValues(len, brd, thk, qty, hints);
-                });
-                
-                const selectedGstRate = parseFloat(gstRateSelect.value);
-                const tax = subtotal * selectedGstRate;
-
-                subtotalAmount.textContent = formatCurrency(subtotal);
-                taxAmount.textContent = formatCurrency(tax);
-
-                const transportationSubtotal = parseFloat(transportationSubtotalAmount.textContent.replace('₹', '')) || 0;
-                const transportationTax = parseFloat(transportationTaxAmount.textContent.replace('₹', '')) || 0;
-
-                const grandTotal = subtotal + tax + transportationSubtotal + transportationTax;
-                grandTotalAmount.textContent = formatCurrency(grandTotal);
-
-                totalWeightAmount.textContent = (totalWeight || 0).toFixed(2);
-            };
-            
-            const updateTransportationTotals = () => {
-                let transportationSubtotal = 0;
-                document.querySelectorAll('.transportation-row').forEach(row => {
-                    const amountText = row.querySelector('.transportation-amount').textContent;
-                    transportationSubtotal += parseFloat(amountText) || 0;
-                });
-
-                const selectedGstRate = parseFloat(transportationGstRateSelect.value) || 0;
-                const transportationTax = transportationSubtotal * selectedGstRate;
-
-                transportationSubtotalAmount.textContent = formatCurrency(transportationSubtotal);
-                transportationTaxAmount.textContent = formatCurrency(transportationTax);
-
-                updateTotals();
-            };
-
-            const createItemRow = (sno) => {
-                const tr = document.createElement('tr');
-                tr.className = 'item-row text-center';
-                tr.innerHTML = `
-                    <td class="border-t py-2 px-2 text-left" style="width: 6%;">${sno}</td>
-                    <td class="border-t py-2 px-2" style="width: 30%;">
-                        <div contenteditable="true" class="item-particulars w-full bg-transparent border-none p-0 text-left cursor-text" aria-label="Particulars" tabindex="0"></div>
-                        <input type="text" list="product-list" class="product-search-input w-full bg-transparent border-none p-0 text-left mt-1" aria-label="Product Search">
-                        <button type="button" class="open-features-btn hidden text-xs px-2 py-1 rounded ml-2 bg-[#008080] text-white hover:bg-[#006666] transition-colors" aria-label="Open feature selection">Features</button>
-                    </td>
-                    <td class="border-t py-2 px-2" style="width: 8%;"><input type="number" step="1" class="item-thk w-full bg-transparent border-none p-0 text-center"></td>
-                    <td class="border-t py-2 px-2" style="width: 7%;"><input type="number" step="1" class="item-len w-full bg-transparent border-none p-0 text-center"></td>
-                    <td class="border-t py-2 px-2" style="width: 7%;"><input type="number" step="1" class="item-brd w-full bg-transparent border-none p-0 text-center"></td>
-                    <td class="border-t py-2 px-2" style="width: 9%;"><input type="number" step="1" class="item-qty w-full bg-transparent border-none p-0 text-center"></td>
-                    <td class="item-sqft border-t py-2 px-2 text-right" style="width: 10%;">0.00</td>
-                    <td class="border-t py-2 px-2" style="width: 10%;"><input type="number" step="1" class="item-rate w-full bg-transparent border-none p-0 text-center"></td>
-                    <td class="item-amount border-t py-2 px-2 text-right" style="width: 12%;">0.00</td>
-                    <td class="border-t no-print text-center" style="width: 5%;">
-                        <button class="remove-item-btn w-6 h-6 flex items-center justify-center text-white bg-red-500 hover:bg-red-700 rounded-full transition-colors" aria-label="Remove item">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
-                        </button>
-                    </td>
-                `;
-
-                const inputs = tr.querySelectorAll('.item-thk, .item-len, .item-brd, .item-qty, .item-rate');
-                inputs.forEach(input => {
-                    input.addEventListener('input', () => {
-                        const thk = parseFloat(tr.querySelector('.item-thk').value) || 0;
-                        const len = parseFloat(tr.querySelector('.item-len').value) || 0;
-                        const brd = parseFloat(tr.querySelector('.item-brd').value) || 0;
-                        const qty = parseFloat(tr.querySelector('.item-qty').value) || 0;
-                        const rate = parseFloat(tr.querySelector('.item-rate').value) || 0;
-
-                        const sqft = (len * brd * qty).toFixed(2);
-                        const amount = (sqft * rate).toFixed(2);
-                        
-                        tr.querySelector('.item-sqft').textContent = sqft;
-                        tr.querySelector('.item-amount').textContent = amount;
-                        updateTotals();
-                    });
-                });
-
-                tr.querySelector('.remove-item-btn').addEventListener('click', () => {
-                    if (invoiceItems.children.length > 1) {
-                        tr.remove();
-                        updateSno();
-                        updateTotals();
-                    } else {
-                        showMessage("You must have at least one item on the invoice.");
-                    }
-                });
-
-                tr.querySelector('.product-search-input').addEventListener('input', (event) => {
-                    const selectedName = event.target.value;
-                    const matchingProducts = productMasterData.filter(p => p['Product Name'] === selectedName);
-                    if (matchingProducts.length > 0) {
-                        currentItemRow = tr;
-                        showProductOptionsModal(matchingProducts);
-                    }
-                    const featuresBtnToggle = tr.querySelector('.open-features-btn');
-                    if (featuresBtnToggle) {
-                        featuresBtnToggle.classList.toggle('hidden', matchingProducts.length === 0);
-                    }
-                });
-    
-                tr.querySelector('.product-search-input').addEventListener('change', (event) => {
-                    const selectedName = event.target.value;
-                    const matchingProducts = (window.productMasterData || productMasterData || []).filter(p => p['Product Name'] === selectedName);
-                    const featuresBtnToggle = tr.querySelector('.open-features-btn');
-                    if (featuresBtnToggle) {
-                        featuresBtnToggle.classList.toggle('hidden', matchingProducts.length === 0);
-                    }
-                    if (matchingProducts.length > 0) {
-                        currentItemRow = tr;
-                        showProductOptionsModal(matchingProducts);
-                    }
-                });
-
-                const featuresBtn = tr.querySelector('.open-features-btn');
-                if (featuresBtn) {
-                    featuresBtn.addEventListener('click', () => {
-                        const selectedName = tr.querySelector('.product-search-input').value.trim();
-                        if (!selectedName) { showMessage('Please select a product first.'); return; }
-                        const data = (window.productMasterData || productMasterData || []);
-                        if (!Array.isArray(data) || data.length === 0) { showMessage('Product list is still loading. Please try again in a moment.'); return; }
-                        const matchingProducts = data.filter(p => p['Product Name'] === selectedName);
-                        if (matchingProducts.length > 0) {
-                            currentItemRow = tr;
-                            showProductOptionsModal(matchingProducts);
-                        } else {
-                            showMessage('No exact match found. Please pick a product from the dropdown.');
-                        }
-                    });
-                }
-
-                tr.querySelector('.item-particulars').style.display = 'none';
-                tr.querySelector('.product-search-input').style.display = 'block';
-
-                return tr;
-            };
-
-            const createTransportationRow = (sno) => {
-                const tr = document.createElement('tr');
-                tr.className = 'transportation-row text-center';
-                tr.innerHTML = `
-                    <td class="border-t py-2 px-2 text-left" style="width: 6%;">${sno}</td>
-                    <td class="border-t py-2 px-2" style="width: 18%;">
-                        <input type="text" class="transportation-dispatch w-full bg-transparent border-none p-0 text-left" placeholder="e.g., Perumbavoor Depot">
-                    </td>
-                    <td class="border-t py-2 px-2" style="width: 18%;">
-                        <input type="text" class="transportation-destination w-full bg-transparent border-none p-0 text-left">
-                    </td>
-                    <td class="border-t py-2 px-2" style="width: 14%;">
-                        <input type="number" step="1" class="transportation-distance w-full bg-transparent border-none p-0 text-center">
-                    </td>
-                    <td class="border-t py-2 px-2" style="width: 14%;">
-                        <input type="number" step="0.01" class="transportation-weight w-full bg-transparent border-none p-0 text-center">
-                    </td>
-                    <td class="border-t py-2 px-2" style="width: 14%;">
-                        <input type="number" step="1" class="transportation-rate w-full bg-transparent border-none p-0 text-center">
-                    </td>
-                    <td class="transportation-amount border-t py-2 px-2 text-right" style="width: 12%;">0.00</td>
-                    <td class="border-t no-print text-center" style="width: 4%;">
-                        <button class="remove-transportation-btn w-6 h-6 flex items-center justify-center text-white bg-red-500 hover:bg-red-700 rounded-full transition-colors" aria-label="Remove transportation row">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
-                        </button>
-                    </td>
-                `;
-
-                const inputs = tr.querySelectorAll('.transportation-distance, .transportation-weight, .transportation-rate');
-                inputs.forEach(input => {
-                    input.addEventListener('input', () => {
-                        const weight = parseFloat(tr.querySelector('.transportation-weight').value) || 0;
-                        const rate = parseFloat(tr.querySelector('.transportation-rate').value) || 0;
-                        const amount = (weight * rate).toFixed(2);
-                        tr.querySelector('.transportation-amount').textContent = amount;
-                        updateTransportationTotals();
-                    });
-                });
-                
-                tr.querySelector('.remove-transportation-btn').addEventListener('click', () => {
-                    tr.remove();
-                    updateTransportationSno();
-                    updateTransportationTotals();
-                    
-                    if (transportationItems.children.length === 0) {
-                        transportationSection.classList.add('hidden');
-                    }
-                });
-
-                return tr;
-            };
-
-            const updateSno = () => {
-                const rows = document.querySelectorAll('.item-row');
-                rows.forEach((row, index) => { row.querySelector('td:first-child').textContent = index + 1; });
-                rows.forEach(r => r.classList.remove('keep-with-next'));
-                if (rows.length) { rows[rows.length - 1].classList.add('keep-with-next'); }
-            };
-            
-            const updateTransportationSno = () => {
-                document.querySelectorAll('.transportation-row').forEach((row, index) => {
-                    row.querySelector('td:first-child').textContent = index + 1;
-                });
-            };
-
-            // Initial item row
-            const initialRow = createItemRow(1);
-            invoiceItems.appendChild(initialRow);
-
-            addItemBtn.addEventListener('click', () => {
-                const newSno = invoiceItems.children.length + 1;
-                const newRow = createItemRow(newSno);
-                invoiceItems.appendChild(newRow);
-                updateSno();
-            });
-
-            // Transportation button reveals section and adds first row if empty
-            addTransportationBtn.addEventListener('click', () => {
-                transportationSection.classList.remove('hidden');
-                if (transportationItems.children.length === 0) {
-                    const firstRow = createTransportationRow(1);
-                    transportationItems.appendChild(firstRow);
-                    updateTransportationSno();
-                    updateTransportationTotals();
-                }
-            });
-
-            addTransportationItemBtn.addEventListener('click', () => {
-                const newSno = transportationItems.children.length + 1;
-                const newRow = createTransportationRow(newSno);
-                transportationItems.appendChild(newRow);
-                updateTransportationSno();
-            });
-
-            gstRateSelect.addEventListener('change', updateTotals);
-            transportationGstRateSelect.addEventListener('change', updateTransportationTotals);
-
-            updateTotals();
-            updateTransportationTotals();
-
-            // === Modal Logic ===
-            const showProductOptionsModal = (products) => {
-                productOptionsContent.innerHTML = '';
-                const featureOrder = ['Faceveneer', 'Thickness (mm)', 'Core Material', 'Glue', 'Weight/Board', 'Chemical Dipping', 'Film Face Color', 'Film Face GSM', 'Wire Mesh', 'Grade', 'Length (ft)', 'Breadth (ft)', 'Rate/SqFt'];
-                
-                availableFeatures = featureOrder.filter(feature => products.some(product => product[feature] && product[feature].toString().trim() !== ''));
-                
-                availableFeatures.forEach(feature => {
-                    const div = document.createElement('div');
-                    div.className = 'flex items-center space-x-4';
-                    
-                    const label = document.createElement('label');
-                    label.className = 'font-semibold w-1/3';
-                    label.textContent = feature;
-                    div.appendChild(label);
-
-                    const select = document.createElement('select');
-                    select.className = 'w-2/3 p-2 border border-gray-300 rounded-md';
-                    select.name = feature.replace(/\s/g, '');
-                    select.setAttribute('data-feature-name', feature);
-                    div.appendChild(select);
-
-                    productOptionsContent.appendChild(div);
-                });
-                
-                productOptionsContent.querySelectorAll('select').forEach(select => {
-                    select.addEventListener('change', updateRateOnSelection);
-                });
-
-                updateOptions(products);
-                productOptionsModal.classList.remove('hidden');
-            };
-
-            const updateOptions = (products) => {
-                availableFeatures.forEach(feature => {
-                    const selectElement = productOptionsContent.querySelector(`[data-feature-name="${feature}"]`);
-                    if (selectElement) {
-                        const uniqueOptions = new Set();
-                        products.forEach(product => {
-                            const value = product[feature];
-                            if (value && value.toString().trim() !== '') uniqueOptions.add(value.toString().trim());
-                        });
-
-                        const currentValue = selectElement.value;
-                        selectElement.innerHTML = '';
-                        const defaultOption = document.createElement('option');
-                        defaultOption.value = '';
-                        defaultOption.textContent = `Select ${feature}`;
-                        selectElement.appendChild(defaultOption);
-
-                        Array.from(uniqueOptions).sort((a,b) => {
-                          const an = parseFloat(a), bn = parseFloat(b);
-                          if (!isNaN(an) && !isNaN(bn)) return an - bn;
-                          return String(a).localeCompare(String(b));
-                        }).forEach(optionText => {
-                            const option = document.createElement('option');
-                            option.value = optionText;
-                            option.textContent = optionText;
-                            selectElement.appendChild(option);
-                        });
-                        
-                        if (uniqueOptions.size === 1) selectElement.value = Array.from(uniqueOptions)[0];
-                        else selectElement.value = currentValue;
-                    }
-                });
-            };
-
-            const updateRateOnSelection = () => {
-                const selectedProductName = currentItemRow.querySelector('.product-search-input').value;
-                let filteredProducts = productMasterData.filter(p => p['Product Name'] === selectedProductName);
-                
-                const selects = productOptionsContent.querySelectorAll('select');
-                selects.forEach(select => {
-                    const featureName = select.getAttribute('data-feature-name');
-                    const selectedValue = select.value;
-                    if (selectedValue) filteredProducts = filteredProducts.filter(p => p[featureName] && p[featureName].toString() === selectedValue);
-                });
-
-                updateOptions(filteredProducts);
-
-                if (filteredProducts.length === 1) {
-                    const rate = filteredProducts[0]['Rate/SqFt'];
-                    const thk  = filteredProducts[0]['Thickness (mm)'];
-                    const len  = filteredProducts[0]['Length (ft)'];
-                    const brd  = filteredProducts[0]['Breadth (ft)'];
-
-                    if (rate && currentItemRow.querySelector('.item-rate')) currentItemRow.querySelector('.item-rate').value = rate.toString();
-                    if (thk  && currentItemRow.querySelector('.item-thk'))  currentItemRow.querySelector('.item-thk').value  = thk.toString();
-                    if (len  && currentItemRow.querySelector('.item-len'))  currentItemRow.querySelector('.item-len').value  = len.toString();
-                    if (brd  && currentItemRow.querySelector('.item-brd'))  currentItemRow.querySelector('.item-brd').value  = brd.toString();
-                } else if (filteredProducts.length === 0) {
-                    if (currentItemRow.querySelector('.item-rate')) currentItemRow.querySelector('.item-rate').value = '';
-                    if (currentItemRow.querySelector('.item-thk'))  currentItemRow.querySelector('.item-thk').value  = '';
-                }
-            };
-            
-            saveModalBtn.addEventListener('click', () => {
-                const particularsDiv = currentItemRow.querySelector('.item-particulars');
-                const productSearchInput = currentItemRow.querySelector('.product-search-input');
-                const thkInput = currentItemRow.querySelector('.item-thk');
-                const rateInput = currentItemRow.querySelector('.item-rate');
-                const lenInput = currentItemRow.querySelector('.item-len');
-                const brdInput = currentItemRow.querySelector('.item-brd');
-                
-                const selectedFeatures = Array.from(productOptionsContent.querySelectorAll('select')).map(select => {
-                    return { name: select.getAttribute('data-feature-name'), value: select.value };
-                }).filter(f => f.value);
-
-                const selectedProductName = productSearchInput.value;
-                const matchingProduct = productMasterData.find(p => {
-                    return p['Product Name'] === selectedProductName && selectedFeatures.every(f => p[f.name] && f.value.includes(p[f.name].toString()));
-                });
-                
-                if (matchingProduct) {
-                    thkInput.value  = matchingProduct['Thickness (mm)'] || '';
-                    rateInput.value = matchingProduct['Rate/SqFt'] || '';
-                    lenInput.value  = matchingProduct['Length (ft)'] || '';
-                    brdInput.value  = matchingProduct['Breadth (ft)'] || '';
-                    
-                    const descriptionLines = selectedFeatures
-                        .filter(f => f.name !== 'Thickness (mm)' && f.name !== 'Rate/SqFt')
-                        .map(f => `${f.name}: ${f.value}`);
-                    const updatedDescription = `${selectedProductName}<br>${descriptionLines.join('<br>')}`;
-                    particularsDiv.innerHTML = updatedDescription;
-
-                    const fixedW = matchingProduct['Weight/Board'] ?? matchingProduct['Fixed_Weight_kg'] ?? matchingProduct['Weight_kg'];
-                    if (fixedW) currentItemRow.dataset.fixedWeight = String(fixedW); else delete currentItemRow.dataset.fixedWeight;
-                    if (matchingProduct['Density_kg_per_m3']) {
-                        currentItemRow.dataset.density = String(matchingProduct['Density_kg_per_m3']);
-                    } else if ((matchingProduct['Grade'] || '').toString().match(/marine/i)) {
-                        currentItemRow.dataset.density = '700';
-                    } else {
-                        currentItemRow.dataset.density = '600';
-                    }
-
-                    productSearchInput.style.display = 'none';
-                    particularsDiv.style.display = 'block';
-
-                    const thk = parseFloat(thkInput.value) || 0;
-                    const len = parseFloat(lenInput.value) || 0;
-                    const brd = parseFloat(brdInput.value) || 0;
-                    const qty = parseFloat(currentItemRow.querySelector('.item-qty').value) || 0;
-                    const rate = parseFloat(rateInput.value) || 0;
-
-                    const sqft = (len * brd * qty).toFixed(2);
-                    const amount = (parseFloat(sqft) * rate).toFixed(2);
-                    currentItemRow.querySelector('.item-sqft').textContent = sqft;
-                    currentItemRow.querySelector('.item-amount').textContent = amount;
-                    updateTotals();
-                } else {
-                    showMessage("Could not find a matching product for the selected options.");
-                }
-                
-                productOptionsModal.classList.add('hidden');
-            });
-
-            cancelModalBtn.addEventListener('click', () => {
-                productOptionsModal.classList.add('hidden');
-            });
-
-            // States/Districts (sample)
-            const statesAndDistricts = { 
-                "Andhra Pradesh": ["Anantapur","Chittoor","East Godavari","Guntur","Krishna","Kurnool","Prakasam","Srikakulam","Sri Potti Sriramulu Nellore","Visakhapatnam","Vizianagaram","West Godavari","Y.S.R. Kadapa"],
-                "Puducherry": ["Karaikal","Mahe","Puducherry","Yanam"]
-            };
-            
-            const populateStateSelect = (selectElement) => {
-                for (const state in statesAndDistricts) {
-                    const option = document.createElement('option');
-                    option.value = state;
-                    option.textContent = state;
-                    selectElement.appendChild(option);
-                }
-            };
-            populateStateSelect(billingStateSelect);
-            populateStateSelect(shippingStateSelect);
-
-            const handleStateChange = (stateSelect, districtSelect) => {
-                const selectedState = stateSelect.value;
-                districtSelect.innerHTML = '<option value="">Select District</option>';
-                districtSelect.disabled = true;
-
-                if (selectedState) {
-                    const districts = statesAndDistricts[selectedState];
-                    districts.forEach(district => {
-                        const option = document.createElement('option');
-                        option.value = district;
-                        option.textContent = district;
-                        districtSelect.appendChild(option);
-                    });
-                    districtSelect.disabled = false;
-                }
-            };
-
-            billingStateSelect.addEventListener('change', () => handleStateChange(billingStateSelect, billingDistrictSelect));
-            shippingStateSelect.addEventListener('change', () => handleStateChange(shippingStateSelect, shippingDistrictSelect));
-            
-            copyBillingBtn.addEventListener('click', () => {
-                const billingAddressLine = document.getElementById('billingAddressLine').textContent;
-                const billingState = billingStateSelect.value;
-                const billingDistrict = billingDistrictSelect.value;
-                
-                document.getElementById('shippingAddressLine').textContent = billingAddressLine;
-                shippingStateSelect.value = billingState;
-                handleStateChange(shippingStateSelect, shippingDistrictSelect);
-                shippingDistrictSelect.value = billingDistrict;
-            });
+      const updateTotals=()=>{
+        let subtotal=0, totalWeight=0;
+        document.querySelectorAll('.item-row').forEach(row=>{
+          subtotal += parseFloat(row.querySelector('.item-amount').textContent)||0;
+          const thk=parseFloat(row.querySelector('.item-thk').value)||0;
+          const len=parseFloat(row.querySelector('.item-len').value)||0;
+          const brd=parseFloat(row.querySelector('.item-brd').value)||0;
+          const qty=parseFloat(row.querySelector('.item-qty').value)||0;
+          const selectedName=row.querySelector('.product-search-input')?.value||'';
+          const hints=getRowWeightHints(row,selectedName);
+          totalWeight += computeRowWeightFromValues(len,brd,thk,qty,hints);
         });
-    </script>
-    
+        const selectedGstRate=parseFloat(gstRateSelect.value);
+        const tax=subtotal*selectedGstRate;
 
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+        subtotalAmount.textContent=formatCurrency(subtotal);
+        taxAmount.textContent=formatCurrency(tax);
 
-    <script>
-    (function(){
-      function handleProductData(products) {
-        if (!Array.isArray(window.productMasterData)) { window.productMasterData = []; }
-        window.productMasterData.splice(0, window.productMasterData.length, ...products);
-        if (typeof productMasterData !== 'undefined' && Array.isArray(productMasterData)) {
-          productMasterData.splice(0, productMasterData.length, ...products);
+        const transportationSubtotal=parseFloat(transportationSubtotalAmount.textContent.replace('₹',''))||0;
+        const transportationTax=parseFloat(transportationTaxAmount.textContent.replace('₹',''))||0;
+
+        const grandTotal=subtotal+tax+transportationSubtotal+transportationTax;
+        grandTotalAmount.textContent=formatCurrency(grandTotal);
+        totalWeightAmount.textContent=(totalWeight||0).toFixed(2);
+      };
+
+      const updateTransportationTotals=()=>{
+        let tSubtotal=0;
+        document.querySelectorAll('.transportation-row').forEach(row=>{
+          tSubtotal += parseFloat(row.querySelector('.transportation-amount').textContent)||0;
+        });
+        const tRate=parseFloat(transportationGstRateSelect.value)||0;
+        const tTax=tSubtotal*tRate;
+        transportationSubtotalAmount.textContent=formatCurrency(tSubtotal);
+        transportationTaxAmount.textContent=formatCurrency(tTax);
+        updateTotals();
+      };
+
+      // Toggle Add Transportation button visibility vs section visibility
+      function toggleTransportationUI(){
+        const hasRows = transportationItems.children.length > 0;
+        if(hasRows){
+          transportationSection.classList.remove('hidden');
+          addTransportationBtn.classList.add('hidden');
+        }else{
+          transportationSection.classList.add('hidden');
+          addTransportationBtn.classList.remove('hidden');
+          // reset transportation totals when no rows
+          transportationSubtotalAmount.textContent=formatCurrency(0);
+          transportationTaxAmount.textContent=formatCurrency(0);
+          updateTotals();
         }
+      }
 
-        const uniqueProductNames = [...new Set(products.map(p => p['Product Name']))];
-        const dl = document.getElementById('product-list');
-        if (dl) {
-          dl.innerHTML = '';
-          uniqueProductNames.forEach(name => {
-            const opt = document.createElement('option');
-            opt.value = name;
-            dl.appendChild(opt);
+      const createItemRow=(sno)=>{
+        const tr=document.createElement('tr');
+        tr.className='item-row text-center';
+        tr.innerHTML=`
+          <td class="border-t py-2 px-2 text-left" style="width:6%;">${sno}</td>
+          <td class="border-t py-2 px-2" style="width:30%;">
+            <div contenteditable="true" class="item-particulars w-full bg-transparent border-none p-0 text-left cursor-text" aria-label="Particulars" tabindex="0"></div>
+            <input type="text" list="product-list" class="product-search-input w-full bg-transparent border-none p-0 text-left mt-1" aria-label="Product Search">
+            <button type="button" class="open-features-btn hidden text-xs px-2 py-1 rounded ml-2 bg-[#008080] text-white hover:bg-[#006666] transition-colors" aria-label="Open feature selection">Features</button>
+          </td>
+          <td class="border-t py-2 px-2" style="width:8%;"><input type="number" step="1" class="item-thk w-full bg-transparent border-none p-0 text-center"></td>
+          <td class="border-t py-2 px-2" style="width:7%;"><input type="number" step="1" class="item-len w-full bg-transparent border-none p-0 text-center"></td>
+          <td class="border-t py-2 px-2" style="width:7%;"><input type="number" step="1" class="item-brd w-full bg-transparent border-none p-0 text-center"></td>
+          <td class="border-t py-2 px-2" style="width:9%;"><input type="number" step="1" class="item-qty w-full bg-transparent border-none p-0 text-center"></td>
+          <td class="item-sqft border-t py-2 px-2 text-right" style="width:10%;">0.00</td>
+          <td class="border-t py-2 px-2" style="width:10%;"><input type="number" step="1" class="item-rate w-full bg-transparent border-none p-0 text-center"></td>
+          <td class="item-amount border-t py-2 px-2 text-right" style="width:12%;">0.00</td>
+          <td class="border-t no-print text-center" style="width:5%;">
+            <button class="remove-item-btn w-6 h-6 flex items-center justify-center text-white bg-red-500 hover:bg-red-700 rounded-full transition-colors" aria-label="Remove item">
+              <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
+            </button>
+          </td>`;
+        const inputs=tr.querySelectorAll('.item-thk,.item-len,.item-brd,.item-qty,.item-rate');
+        inputs.forEach(input=>{
+          input.addEventListener('input',()=>{
+            const thk=parseFloat(tr.querySelector('.item-thk').value)||0;
+            const len=parseFloat(tr.querySelector('.item-len').value)||0;
+            const brd=parseFloat(tr.querySelector('.item-brd').value)||0;
+            const qty=parseFloat(tr.querySelector('.item-qty').value)||0;
+            const rate=parseFloat(tr.querySelector('.item-rate').value)||0;
+            const sqft=(len*brd*qty).toFixed(2);
+            const amount=(sqft*rate).toFixed(2);
+            tr.querySelector('.item-sqft').textContent=sqft;
+            tr.querySelector('.item-amount').textContent=amount;
+            updateTotals();
+          });
+        });
+        tr.querySelector('.remove-item-btn').addEventListener('click',()=>{
+          if(invoiceItems.children.length>1){ tr.remove(); updateSno(); updateTotals(); }
+          else{ showMessage("You must have at least one item on the invoice."); }
+        });
+        tr.querySelector('.product-search-input').addEventListener('input',(e)=>{
+          const selectedName=e.target.value;
+          const matchingProducts=productMasterData.filter(p=>p['Product Name']===selectedName);
+          if(matchingProducts.length>0){ currentItemRow=tr; showProductOptionsModal(matchingProducts); }
+          const btn=tr.querySelector('.open-features-btn'); if(btn){ btn.classList.toggle('hidden',matchingProducts.length===0); }
+        });
+        tr.querySelector('.product-search-input').addEventListener('change',(e)=>{
+          const selectedName=e.target.value;
+          const matching=(window.productMasterData||productMasterData||[]).filter(p=>p['Product Name']===selectedName);
+          const btn=tr.querySelector('.open-features-btn'); if(btn){ btn.classList.toggle('hidden',matching.length===0); }
+          if(matching.length>0){ currentItemRow=tr; showProductOptionsModal(matching); }
+        });
+        const featuresBtn=tr.querySelector('.open-features-btn');
+        if(featuresBtn){
+          featuresBtn.addEventListener('click',()=>{
+            const selectedName=tr.querySelector('.product-search-input').value.trim();
+            if(!selectedName){ showMessage('Please select a product first.'); return; }
+            const data=(window.productMasterData||productMasterData||[]);
+            if(!Array.isArray(data)||data.length===0){ showMessage('Product list is still loading.'); return; }
+            const matching=data.filter(p=>p['Product Name']===selectedName);
+            if(matching.length>0){ currentItemRow=tr; showProductOptionsModal(matching); }
+            else{ showMessage('No exact match found.'); }
           });
         }
-      }
+        tr.querySelector('.item-particulars').style.display='none';
+        tr.querySelector('.product-search-input').style.display='block';
+        return tr;
+      };
 
-      function handleError(error) {
-        console.error("Failed to load product data:", error);
-        const messageBox = document.getElementById('message-box');
-        if (messageBox) {
-          messageBox.textContent = "Error: " + (error && error.message ? error.message : String(error));
-          messageBox.style.display = 'block';
-          setTimeout(() => messageBox.style.display = 'none', 3000);
+      const createTransportationRow=(sno)=>{
+        const tr=document.createElement('tr');
+        tr.className='transportation-row text-center';
+        tr.innerHTML=`
+          <td class="border-t py-2 px-2 text-left" style="width:6%;">${sno}</td>
+          <td class="border-t py-2 px-2" style="width:18%;"><input type="text" class="transportation-dispatch w-full bg-transparent border-none p-0 text-left" placeholder="e.g., Perumbavoor Depot"></td>
+          <td class="border-t py-2 px-2" style="width:18%;"><input type="text" class="transportation-destination w-full bg-transparent border-none p-0 text-left"></td>
+          <td class="border-t py-2 px-2" style="width:14%;"><input type="number" step="1" class="transportation-distance w-full bg-transparent border-none p-0 text-center"></td>
+          <td class="border-t py-2 px-2" style="width:14%;"><input type="number" step="0.01" class="transportation-weight w-full bg-transparent border-none p-0 text-center"></td>
+          <td class="border-t py-2 px-2" style="width:14%;"><input type="number" step="1" class="transportation-rate w-full bg-transparent border-none p-0 text-center"></td>
+          <td class="transportation-amount border-t py-2 px-2 text-right" style="width:12%;">0.00</td>
+          <td class="border-t no-print text-center" style="width:4%;">
+            <button class="remove-transportation-btn w-6 h-6 inline-flex items-center justify-center text-white bg-red-500 hover:bg-red-700 rounded-full transition-colors" aria-label="Remove transportation row" type="button">
+              <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
+            </button>
+          </td>`;
+        const inputs=tr.querySelectorAll('.transportation-distance,.transportation-weight,.transportation-rate');
+        inputs.forEach(input=>{
+          input.addEventListener('input',()=>{
+            const weight=parseFloat(tr.querySelector('.transportation-weight').value)||0;
+            const rate=parseFloat(tr.querySelector('.transportation-rate').value)||0;
+            const amount=(weight*rate).toFixed(2);
+            tr.querySelector('.transportation-amount').textContent=amount;
+            updateTransportationTotals();
+          });
+        });
+        tr.querySelector('.remove-transportation-btn').addEventListener('click',()=>{
+          tr.remove();
+          updateTransportationSno();
+          updateTransportationTotals();
+          if(transportationItems.children.length===0){ toggleTransportationUI(); }
+        });
+        return tr;
+      };
+
+      const updateSno=()=>{
+        const rows=document.querySelectorAll('.item-row');
+        rows.forEach((row,idx)=>{ row.querySelector('td:first-child').textContent=idx+1; });
+        rows.forEach(r=>r.classList.remove('keep-with-next'));
+        if(rows.length){ rows[rows.length-1].classList.add('keep-with-next'); }
+      };
+      const updateTransportationSno=()=>{
+        document.querySelectorAll('.transportation-row').forEach((row,idx)=>{ row.querySelector('td:first-child').textContent=idx+1; });
+      };
+
+      // Initial item row
+      invoiceItems.appendChild(createItemRow(1));
+
+      addItemBtn.addEventListener('click',()=>{
+        const newSno=invoiceItems.children.length+1;
+        invoiceItems.appendChild(createItemRow(newSno));
+        updateSno();
+      });
+
+      // Add Transportation table
+      addTransportationBtn.addEventListener('click',()=>{
+        if(transportationItems.children.length===0){
+          transportationItems.appendChild(createTransportationRow(1));
+          updateTransportationSno();
+          updateTransportationTotals();
         }
-      }
+        toggleTransportationUI(); // hide button & show section
+      });
 
-      window.addEventListener('load', function(){
-        fetch('product_master.csv', { cache: 'no-store' })
-          .then(resp => {
-            if (!resp.ok) throw new Error("HTTP " + resp.status + " while fetching product_master.csv");
-            return resp.text();
-          })
-          .then(csvText => {
-            const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
-            if (parsed.errors && parsed.errors.length) {
-              console.warn("CSV parse warnings/errors:", parsed.errors);
-            }
-            const rows = parsed.data.map(row => {
-              const obj = {};
-              Object.keys(row).forEach(k => {
-                const key = String(k || '').trim();
-                const val = row[k] != null ? String(row[k]).trim() : "";
-                obj[key] = val;
-              });
-              return obj;
-            });
+      // Inside table "+" button
+      addTransportationItemBtn.addEventListener('click',()=>{
+        const newSno=transportationItems.children.length+1;
+        transportationItems.appendChild(createTransportationRow(newSno));
+        updateTransportationSno();
+      });
+
+      gstRateSelect.addEventListener('change',updateTotals);
+      transportationGstRateSelect.addEventListener('change',updateTransportationTotals);
+
+      updateTotals();
+      updateTransportationTotals();
+
+      // ==== Modal logic (unchanged core) ====
+      const showProductOptionsModal=(products)=>{
+        productOptionsContent.innerHTML='';
+        const featureOrder=['Faceveneer','Thickness (mm)','Core Material','Glue','Weight/Board','Chemical Dipping','Film Face Color','Film Face GSM','Wire Mesh','Grade','Length (ft)','Breadth (ft)','Rate/SqFt'];
+        availableFeatures = featureOrder.filter(f=>products.some(p=>p[f] && p[f].toString().trim()!==''));
+        availableFeatures.forEach(feature=>{
+          const div=document.createElement('div'); div.className='flex items-center space-x-4';
+          const label=document.createElement('label'); label.className='font-semibold w-1/3'; label.textContent=feature; div.appendChild(label);
+          const select=document.createElement('select'); select.className='w-2/3 p-2 border border-gray-300 rounded-md'; select.name=feature.replace(/\s/g,''); select.setAttribute('data-feature-name',feature); div.appendChild(select);
+          productOptionsContent.appendChild(div);
+        });
+        productOptionsContent.querySelectorAll('select').forEach(s=>s.addEventListener('change',updateRateOnSelection));
+        updateOptions(products);
+        productOptionsModal.classList.remove('hidden');
+      };
+
+      const updateOptions=(products)=>{
+        availableFeatures.forEach(feature=>{
+          const el=productOptionsContent.querySelector(`[data-feature-name="${feature}"]`);
+          if(!el) return;
+          const unique=new Set();
+          products.forEach(p=>{ const v=p[feature]; if(v && v.toString().trim()!=='') unique.add(v.toString().trim()); });
+          const cur=el.value;
+          el.innerHTML='';
+          const def=document.createElement('option'); def.value=''; def.textContent=`Select ${feature}`; el.appendChild(def);
+          Array.from(unique).sort((a,b)=>{const an=parseFloat(a),bn=parseFloat(b); if(!isNaN(an)&&!isNaN(bn)) return an-bn; return String(a).localeCompare(String(b));})
+            .forEach(t=>{const o=document.createElement('option'); o.value=t; o.textContent=t; el.appendChild(o);});
+          if(unique.size===1) el.value=Array.from(unique)[0]; else el.value=cur;
+        });
+      };
+
+      const updateRateOnSelection=()=>{
+        const name=currentItemRow.querySelector('.product-search-input').value;
+        let filtered=productMasterData.filter(p=>p['Product Name']===name);
+        productOptionsContent.querySelectorAll('select').forEach(sel=>{
+          const feature=sel.getAttribute('data-feature-name'); const val=sel.value;
+          if(val) filtered=filtered.filter(p=>p[feature] && p[feature].toString()===val);
+        });
+        updateOptions(filtered);
+        if(filtered.length===1){
+          const row=filtered[0];
+          const r=row['Rate/SqFt'], thk=row['Thickness (mm)'], len=row['Length (ft)'], brd=row['Breadth (ft)'];
+          if(r) currentItemRow.querySelector('.item-rate').value=r.toString();
+          if(thk) currentItemRow.querySelector('.item-thk').value=thk.toString();
+          if(len) currentItemRow.querySelector('.item-len').value=len.toString();
+          if(brd) currentItemRow.querySelector('.item-brd').value=brd.toString();
+        }else if(filtered.length===0){
+          currentItemRow.querySelector('.item-rate').value='';
+          currentItemRow.querySelector('.item-thk').value='';
+        }
+      };
+
+      saveModalBtn.addEventListener('click',()=>{
+        const particulars=currentItemRow.querySelector('.item-particulars');
+        const productInput=currentItemRow.querySelector('.product-search-input');
+        const thkInput=currentItemRow.querySelector('.item-thk');
+        const rateInput=currentItemRow.querySelector('.item-rate');
+        const lenInput=currentItemRow.querySelector('.item-len');
+        const brdInput=currentItemRow.querySelector('.item-brd');
+        const selectedFeatures=Array.from(productOptionsContent.querySelectorAll('select')).map(s=>({name:s.getAttribute('data-feature-name'),value:s.value})).filter(f=>f.value);
+        const name=productInput.value;
+        const match=productMasterData.find(p=> p['Product Name']===name && selectedFeatures.every(f=>p[f.name] && f.value.includes(p[f.name].toString())));
+        if(match){
+          thkInput.value=match['Thickness (mm)']||''; rateInput.value=match['Rate/SqFt']||''; lenInput.value=match['Length (ft)']||''; brdInput.value=match['Breadth (ft)']||'';
+          const descLines=selectedFeatures.filter(f=>f.name!=='Thickness (mm)'&& f.name!=='Rate/SqFt').map(f=>`${f.name}: ${f.value}`);
+          particulars.innerHTML=`${name}<br>${descLines.join('<br>')}`;
+          const fixedW=match['Weight/Board'] ?? match['Fixed_Weight_kg'] ?? match['Weight_kg'];
+          if(fixedW) currentItemRow.dataset.fixedWeight=String(fixedW); else delete currentItemRow.dataset.fixedWeight;
+          if(match['Density_kg_per_m3']) currentItemRow.dataset.density=String(match['Density_kg_per_m3']);
+          else if((match['Grade']||'').toString().match(/marine/i)) currentItemRow.dataset.density='700';
+          else currentItemRow.dataset.density='600';
+          productInput.style.display='none'; particulars.style.display='block';
+          const thk=parseFloat(thkInput.value)||0, len=parseFloat(lenInput.value)||0, brd=parseFloat(brdInput.value)||0, qty=parseFloat(currentItemRow.querySelector('.item-qty').value)||0, rate=parseFloat(rateInput.value)||0;
+          const sqft=(len*brd*qty).toFixed(2), amount=(parseFloat(sqft)*rate).toFixed(2);
+          currentItemRow.querySelector('.item-sqft').textContent=sqft; currentItemRow.querySelector('.item-amount').textContent=amount; updateTotals();
+        }else{ showMessage("Could not find a matching product for the selected options."); }
+        productOptionsModal.classList.add('hidden');
+      });
+      cancelModalBtn.addEventListener('click',()=>{ productOptionsModal.classList.add('hidden'); });
+
+      // States/Districts (sample)
+      const statesAndDistricts={ "Andhra Pradesh":["Anantapur","Chittoor","East Godavari","Guntur","Krishna","Kurnool","Prakasam","Srikakulam","Sri Potti Sriramulu Nellore","Visakhapatnam","Vizianagaram","West Godavari","Y.S.R. Kadapa"], "Puducherry":["Karaikal","Mahe","Puducherry","Yanam"] };
+      function populateStateSelect(sel){ for(const st in statesAndDistricts){ const o=document.createElement('option'); o.value=st; o.textContent=st; sel.appendChild(o);} }
+      populateStateSelect(billingStateSelect); populateStateSelect(shippingStateSelect);
+      const handleStateChange=(stateSel,distSel)=>{ const st=stateSel.value; distSel.innerHTML='<option value="">Select District</option>'; distSel.disabled=true; if(st){ statesAndDistricts[st].forEach(d=>{ const o=document.createElement('option'); o.value=d; o.textContent=d; distSel.appendChild(o);}); distSel.disabled=false;} };
+      billingStateSelect.addEventListener('change',()=>handleStateChange(billingStateSelect,billingDistrictSelect));
+      shippingStateSelect.addEventListener('change',()=>handleStateChange(shippingStateSelect,shippingDistrictSelect));
+      copyBillingBtn.addEventListener('click',()=>{
+        const addr=document.getElementById('billingAddressLine').textContent;
+        const st=billingStateSelect.value; const dist=billingDistrictSelect.value;
+        document.getElementById('shippingAddressLine').textContent=addr;
+        shippingStateSelect.value=st; handleStateChange(shippingStateSelect,shippingDistrictSelect); shippingDistrictSelect.value=dist;
+      });
+    });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script>
+    (function(){
+      function handleProductData(products){
+        if(!Array.isArray(window.productMasterData)){ window.productMasterData=[]; }
+        window.productMasterData.splice(0,window.productMasterData.length,...products);
+        if(typeof productMasterData!=='undefined' && Array.isArray(productMasterData)){ productMasterData.splice(0,productMasterData.length,...products); }
+        const unique=[...new Set(products.map(p=>p['Product Name']))];
+        const dl=document.getElementById('product-list');
+        if(dl){ dl.innerHTML=''; unique.forEach(name=>{ const opt=document.createElement('option'); opt.value=name; dl.appendChild(opt); }); }
+      }
+      function handleError(error){
+        console.error("Failed to load product data:",error);
+        const messageBox=document.getElementById('message-box');
+        if(messageBox){ messageBox.textContent="Error: "+(error&&error.message?error.message:String(error)); messageBox.style.display='block'; setTimeout(()=>messageBox.style.display='none',3000); }
+      }
+      window.addEventListener('load',function(){
+        fetch('product_master.csv',{cache:'no-store'})
+          .then(resp=>{ if(!resp.ok) throw new Error("HTTP "+resp.status+" while fetching product_master.csv"); return resp.text(); })
+          .then(csvText=>{
+            const parsed=Papa.parse(csvText,{header:true,skipEmptyLines:true});
+            if(parsed.errors && parsed.errors.length){ console.warn("CSV parse warnings/errors:",parsed.errors); }
+            const rows=parsed.data.map(row=>{ const obj={}; Object.keys(row).forEach(k=>{ const key=String(k||'').trim(); const val=row[k]!=null?String(row[k]).trim():""; obj[key]=val; }); return obj; });
             handleProductData(rows);
           })
           .catch(handleError);
       });
     })();
-    </script>
-
+  </script>
 </body>
 </html>
