@@ -381,6 +381,7 @@
       const messageBox=document.getElementById('message-box');
       const gstRateSelect=document.getElementById('gstRateSelect');
       const invoiceNumberEl=document.getElementById('invoiceNumber');
+      const incotermsSelect=document.getElementById('incoterms');   /* <-- Incoterms handle */
 
       // Transportation controls
       const addTransportationBtn=document.getElementById('addTransportationBtn');
@@ -449,18 +450,19 @@
         updateTotals();
       };
 
-      // Toggle Add Transportation button visibility vs section visibility
+      /* Show/hide transportation UI AND sync Incoterms */
       function toggleTransportationUI(){
         const hasRows = transportationItems.children.length > 0;
         if(hasRows){
           transportationSection.classList.remove('hidden');
           addTransportationBtn.classList.add('hidden');
+          incotermsSelect.value = 'DAP';              // keep in sync
         }else{
           transportationSection.classList.add('hidden');
           addTransportationBtn.classList.remove('hidden');
-          // reset transportation totals when no rows
           transportationSubtotalAmount.textContent=formatCurrency(0);
           transportationTaxAmount.textContent=formatCurrency(0);
+          incotermsSelect.value = 'EXW';              // back to EXW
           updateTotals();
         }
       }
@@ -596,7 +598,7 @@
           updateTransportationSno();
           updateTransportationTotals();
         }
-        toggleTransportationUI(); // hide button & show section
+        toggleTransportationUI(); // hide button & show section + set DAP
       });
 
       // Inside table "+" button
@@ -604,6 +606,23 @@
         const newSno=transportationItems.children.length+1;
         transportationItems.appendChild(createTransportationRow(newSno));
         updateTransportationSno();
+      });
+
+      // Changing Incoterms manually should also toggle transportation UI
+      incotermsSelect.addEventListener('change', ()=>{
+        if(incotermsSelect.value === 'EXW'){
+          // Clear & hide transportation
+          transportationItems.innerHTML = '';
+          toggleTransportationUI();
+        }else if(incotermsSelect.value === 'DAP'){
+          // Ensure at least one transport row
+          if(transportationItems.children.length === 0){
+            transportationItems.appendChild(createTransportationRow(1));
+            updateTransportationSno();
+            updateTransportationTotals();
+          }
+          toggleTransportationUI();
+        }
       });
 
       gstRateSelect.addEventListener('change',updateTotals);
@@ -739,4 +758,3 @@
   </script>
 </body>
 </html>
-
