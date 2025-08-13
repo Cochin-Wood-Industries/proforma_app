@@ -953,43 +953,29 @@
                 productOptionsModal.classList.add('hidden');
             });
 
-            // States/Districts (sample)
-            const statesAndDistricts = { 
-                "Andhra Pradesh": ["Anantapur","Chittoor","East Godavari","Guntur","Krishna","Kurnool","Prakasam","Srikakulam","Sri Potti Sriramulu Nellore","Visakhapatnam","Vizianagaram","West Godavari","Y.S.R. Kadapa"],
-                "Puducherry": ["Karaikal","Mahe","Puducherry","Yanam"]
-            };
-            
-            const populateStateSelect = (selectElement) => {
-                for (const state in statesAndDistricts) {
-                    const option = document.createElement('option');
-                    option.value = state;
-                    option.textContent = state;
-                    selectElement.appendChild(option);
+            // States/Districts
+            let statesAndDistricts={};
+            const populateStateSelect=(selectElement)=>{
+                for(const state in statesAndDistricts){
+                    const option=document.createElement('option'); option.value=state; option.textContent=state; selectElement.appendChild(option);
                 }
             };
-            populateStateSelect(billingStateSelect);
-            populateStateSelect(shippingStateSelect);
-
-            const handleStateChange = (stateSelect, districtSelect) => {
-                const selectedState = stateSelect.value;
-                districtSelect.innerHTML = '<option value="">Select District</option>';
-                districtSelect.disabled = true;
-
-                if (selectedState) {
-                    const districts = statesAndDistricts[selectedState];
-                    districts.forEach(district => {
-                        const option = document.createElement('option');
-                        option.value = district;
-                        option.textContent = district;
-                        districtSelect.appendChild(option);
+            const handleStateChange=(stateSelect,districtSelect)=>{
+                const selectedState=stateSelect.value;
+                districtSelect.innerHTML='<option value="">Select District</option>';
+                districtSelect.disabled=true;
+                if(selectedState && statesAndDistricts[selectedState]){
+                    statesAndDistricts[selectedState].forEach(district=>{
+                        const option=document.createElement('option'); option.value=district; option.textContent=district; districtSelect.appendChild(option);
                     });
-                    districtSelect.disabled = false;
+                    districtSelect.disabled=false;
                 }
             };
-
-            billingStateSelect.addEventListener('change', () => handleStateChange(billingStateSelect, billingDistrictSelect));
-            shippingStateSelect.addEventListener('change', () => handleStateChange(shippingStateSelect, shippingDistrictSelect));
-            
+            fetch('states_districts.json')
+                .then(r=>r.json())
+                .then(data=>{ statesAndDistricts=data; populateStateSelect(billingStateSelect); populateStateSelect(shippingStateSelect); });
+            billingStateSelect.addEventListener('change',()=>handleStateChange(billingStateSelect,billingDistrictSelect));
+            shippingStateSelect.addEventListener('change',()=>handleStateChange(shippingStateSelect,shippingDistrictSelect));
             copyBillingBtn.addEventListener('click', () => {
                 const billingAddressLine = document.getElementById('billingAddressLine').textContent;
                 const billingState = billingStateSelect.value;
