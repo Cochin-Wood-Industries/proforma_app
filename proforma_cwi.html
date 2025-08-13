@@ -397,6 +397,7 @@
       const productOptionsContent=document.getElementById('productOptionsContent');
       const saveModalBtn=document.getElementById('saveModalBtn');
       const cancelModalBtn=document.getElementById('cancelModalBtn');
+      const saveToSheetBtn=document.getElementById('saveToSheetBtn');
 
       // Helpers
       function addDaysISO(iso,days){ if(!iso) return ''; const d=new Date(iso); d.setDate(d.getDate()+days); const yyyy=d.getFullYear(); const mm=String(d.getMonth()+1).padStart(2,'0'); const dd=String(d.getDate()).padStart(2,'0'); return `${yyyy}-${mm}-${dd}`;}
@@ -406,8 +407,10 @@
       invoiceDate.value=today; syncValidTillFromInvoiceDate();
       invoiceDate.addEventListener('change',syncValidTillFromInvoiceDate);
 
+      const params=new URLSearchParams(window.location.search);
+      const fileParam=params.get('file');
       function generatePiNo(){ const d=new Date(); const yyyy=d.getFullYear(); const mm=String(d.getMonth()+1).padStart(2,'0'); const dd=String(d.getDate()).padStart(2,'0'); const yyyymmdd=`${yyyy}${mm}${dd}`; const key=`piSeq-${yyyymmdd}`; const next=(parseInt(localStorage.getItem(key)||'0',10)+1); localStorage.setItem(key,String(next)); const seq=String(next).padStart(3,'0'); return `CWI-${yyyymmdd}-${seq}`;}
-      if(invoiceNumberEl && invoiceNumberEl.textContent.trim()===''){ invoiceNumberEl.textContent=generatePiNo(); }
+      if(invoiceNumberEl && invoiceNumberEl.textContent.trim()==='' && !fileParam){ invoiceNumberEl.textContent=generatePiNo(); }
 
       const showMessage=(message,duration=3000)=>{ messageBox.textContent=message; messageBox.style.display='block'; setTimeout(()=>{messageBox.style.display='none';},duration); };
       const formatCurrency=(amount)=>`₹${parseFloat(amount).toFixed(2)}`;
@@ -582,6 +585,105 @@
         document.querySelectorAll('.transportation-row').forEach((row,idx)=>{ row.querySelector('td:first-child').textContent=idx+1; });
       };
 
+      function collectProformaData(){
+        const data={
+          template:'cwi',
+          invoiceNumber:invoiceNumberEl.textContent.trim(),
+          invoiceDate:invoiceDate.value,
+          validTill:validTill.value,
+          incoterms:incotermsSelect.value,
+          clientName:document.getElementById('clientName').textContent.trim(),
+          clientCompany:document.getElementById('clientCompany').textContent.trim(),
+          clientGSTIN:document.getElementById('clientGSTIN').textContent.trim(),
+          billingAddressLine:document.getElementById('billingAddressLine').textContent.trim(),
+          billingState:billingStateSelect.value,
+          billingDistrict:billingDistrictSelect.value,
+          shippingAddressLine:document.getElementById('shippingAddressLine').textContent.trim(),
+          shippingState:shippingStateSelect.value,
+          shippingDistrict:shippingDistrictSelect.value,
+          gstRate:gstRateSelect.value,
+          items:Array.from(document.querySelectorAll('.item-row')).map(row=>({
+            particulars:row.querySelector('.item-particulars').innerHTML,
+            thk:row.querySelector('.item-thk').value,
+            len:row.querySelector('.item-len').value,
+            brd:row.querySelector('.item-brd').value,
+            qty:row.querySelector('.item-qty').value,
+            sqft:row.querySelector('.item-sqft').textContent,
+            rate:row.querySelector('.item-rate').value,
+            amount:row.querySelector('.item-amount').textContent,
+            dataset:{fixedWeight:row.dataset.fixedWeight||'',density:row.dataset.density||''}
+          })),
+          transportation:Array.from(document.querySelectorAll('.transportation-row')).map(row=>({
+            dispatch:row.querySelector('.transportation-dispatch').value,
+            destination:row.querySelector('.transportation-destination').value,
+            distance:row.querySelector('.transportation-distance').value,
+            weight:row.querySelector('.transportation-weight').value,
+            rate:row.querySelector('.transportation-rate').value,
+            amount:row.querySelector('.transportation-amount').textContent
+          }))
+        };
+        return data;
+      }
+
+      function restoreProformaData(data){
+        if(!data) return;
+        invoiceNumberEl.textContent=data.invoiceNumber||'';
+        invoiceDate.value=data.invoiceDate||'';
+        validTill.value=data.validTill||'';
+        incotermsSelect.value=data.incoterms||'EXW';
+        document.getElementById('clientName').textContent=data.clientName||'';
+        document.getElementById('clientCompany').textContent=data.clientCompany||'';
+        document.getElementById('clientGSTIN').textContent=data.clientGSTIN||'';
+        document.getElementById('billingAddressLine').textContent=data.billingAddressLine||'';
+        billingStateSelect.value=data.billingState||'';
+        handleStateChange(billingStateSelect,billingDistrictSelect);
+        billingDistrictSelect.value=data.billingDistrict||'';
+        document.getElementById('shippingAddressLine').textContent=data.shippingAddressLine||'';
+        shippingStateSelect.value=data.shippingState||'';
+        handleStateChange(shippingStateSelect,shippingDistrictSelect);
+        shippingDistrictSelect.value=data.shippingDistrict||'';
+        gstRateSelect.value=data.gstRate||gstRateSelect.value;
+
+        invoiceItems.innerHTML='';
+        (data.items||[]).forEach((item,idx)=>{
+          const row=createItemRow(idx+1);
+          invoiceItems.appendChild(row);
+          row.querySelector('.item-particulars').innerHTML=item.particulars||'';
+          row.querySelector('.item-thk').value=item.thk||'';
+          row.querySelector('.item-len').value=item.len||'';
+          row.querySelector('.item-brd').value=item.brd||'';
+          row.querySelector('.item-qty').value=item.qty||'';
+          row.querySelector('.item-sqft').textContent=item.sqft||'';
+          row.querySelector('.item-rate').value=item.rate||'';
+          row.querySelector('.item-amount').textContent=item.amount||'';
+          if(item.particulars){
+            row.querySelector('.item-particulars').style.display='block';
+            row.querySelector('.product-search-input').style.display='none';
+          }
+          if(item.dataset){
+            if(item.dataset.fixedWeight) row.dataset.fixedWeight=item.dataset.fixedWeight;
+            if(item.dataset.density) row.dataset.density=item.dataset.density;
+          }
+        });
+        updateSno();
+
+        transportationItems.innerHTML='';
+        (data.transportation||[]).forEach((t,idx)=>{
+          const row=createTransportationRow(idx+1);
+          transportationItems.appendChild(row);
+          row.querySelector('.transportation-dispatch').value=t.dispatch||'';
+          row.querySelector('.transportation-destination').value=t.destination||'';
+          row.querySelector('.transportation-distance').value=t.distance||'';
+          row.querySelector('.transportation-weight').value=t.weight||'';
+          row.querySelector('.transportation-rate').value=t.rate||'';
+          row.querySelector('.transportation-amount').textContent=t.amount||'0.00';
+        });
+        updateTransportationSno();
+        if((data.transportation||[]).length>0){ toggleTransportationUI(); }
+        updateTotals();
+        updateTransportationTotals();
+      }
+
       // Initial item row
       invoiceItems.appendChild(createItemRow(1));
 
@@ -630,6 +732,13 @@
 
       updateTotals();
       updateTransportationTotals();
+
+      saveToSheetBtn.addEventListener('click',()=>{
+        const data=collectProformaData();
+        fetch('/api/proforma',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
+          .then(res=>{if(!res.ok) throw new Error('Failed'); showMessage('Proforma saved');})
+          .catch(()=>showMessage('Error saving proforma'));
+      });
 
       // ==== Modal logic (unchanged core) ====
       const showProductOptionsModal=(products)=>{
@@ -762,6 +871,9 @@
         document.getElementById('shippingAddressLine').textContent=addr;
         shippingStateSelect.value=st; handleStateChange(shippingStateSelect,shippingDistrictSelect); shippingDistrictSelect.value=dist;
       });
+      if(fileParam){
+        fetch(`/api/proforma/${fileParam}`).then(r=>r.json()).then(restoreProformaData).catch(err=>console.error(err));
+      }
     });
   </script>
 

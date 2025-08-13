@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Proforma History</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#0f766e",
+            cplbrown: "#8B5E3C"
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-50 text-gray-800 p-4">
+  <div class="mb-4">
+    <button onclick="window.location.href='index.html'" class="bg-primary text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-primary/90">← Back to Home</button>
+  </div>
+  <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-2xl">
+    <h1 class="text-2xl font-extrabold mb-4 text-center">Proforma History</h1>
+    <table class="w-full border-collapse mb-6 bg-gray-50 text-sm rounded-lg overflow-hidden shadow-sm">
+      <thead class="bg-primary text-white">
+        <tr>
+          <th class="py-2 px-2 text-left">P.I. No</th>
+          <th class="py-2 px-2 text-left">Customer</th>
+          <th class="py-2 px-2 text-left">Date</th>
+          <th class="py-2 px-2 text-left">Action</th>
+        </tr>
+      </thead>
+      <tbody id="historyBody"></tbody>
+    </table>
+  </div>
+  <script>
+    function restore(file, template){
+      const page = template === 'cpl' ? 'proforma_CPL.html' : 'proforma_cwi.html';
+      window.location.href = `${page}?file=${encodeURIComponent(file)}`;
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      fetch('/api/proformas').then(r=>r.json()).then(list => {
+        const tbody = document.getElementById('historyBody');
+        list.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.className = 'border-b';
+          const date = new Date(item.createdAt).toLocaleString();
+          tr.innerHTML = `
+            <td class="py-2 px-2">${item.invoiceNumber || ''}</td>
+            <td class="py-2 px-2">${item.customerName || ''}</td>
+            <td class="py-2 px-2">${date}</td>
+            <td class="py-2 px-2"><button class="bg-primary text-white px-3 py-1 rounded hover:bg-primary/90" data-file="${item.file}" data-template="${item.template}">Restore</button></td>
+          `;
+          tbody.appendChild(tr);
+        });
+        tbody.addEventListener('click', (e)=>{
+          const btn = e.target.closest('button');
+          if(btn){ restore(btn.getAttribute('data-file'), btn.getAttribute('data-template')); }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

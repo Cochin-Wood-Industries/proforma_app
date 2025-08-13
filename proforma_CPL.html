@@ -478,6 +478,7 @@
             const productOptionsContent = document.getElementById('productOptionsContent');
             const saveModalBtn = document.getElementById('saveModalBtn');
             const cancelModalBtn = document.getElementById('cancelModalBtn');
+            const saveToSheetBtn = document.getElementById('saveToSheetBtn');
 
             // --- Date helpers for Valid Till (+15 days) ---
             function addDaysISO(iso, days) {
@@ -502,6 +503,8 @@
             // When Date changes later, re-auto-fill Valid Till
             invoiceDate.addEventListener('change', syncValidTillFromInvoiceDate);
 
+            const params = new URLSearchParams(window.location.search);
+            const fileParam = params.get('file');
             // --- Auto-generate PI No (daily increment) ---
             function generatePiNo() {
               const d = new Date();
@@ -515,7 +518,7 @@
               const seq = String(next).padStart(3, '0');
               return `CPL-${yyyymmdd}-${seq}`;
             }
-            if (invoiceNumberEl && invoiceNumberEl.textContent.trim() === '') {
+            if (invoiceNumberEl && invoiceNumberEl.textContent.trim() === '' && !fileParam) {
               invoiceNumberEl.textContent = generatePiNo();
             }
 
@@ -758,6 +761,105 @@
                 });
             };
 
+            function collectProformaData() {
+                const data = {
+                    template: 'cpl',
+                    invoiceNumber: invoiceNumberEl.textContent.trim(),
+                    invoiceDate: invoiceDate.value,
+                    validTill: validTill.value,
+                    incoterms: incotermsSelect.value,
+                    clientName: document.getElementById('clientName').textContent.trim(),
+                    clientCompany: document.getElementById('clientCompany').textContent.trim(),
+                    clientGSTIN: document.getElementById('clientGSTIN').textContent.trim(),
+                    billingAddressLine: document.getElementById('billingAddressLine').textContent.trim(),
+                    billingState: billingStateSelect.value,
+                    billingDistrict: billingDistrictSelect.value,
+                    shippingAddressLine: document.getElementById('shippingAddressLine').textContent.trim(),
+                    shippingState: shippingStateSelect.value,
+                    shippingDistrict: shippingDistrictSelect.value,
+                    gstRate: gstRateSelect.value,
+                    items: Array.from(document.querySelectorAll('.item-row')).map(row => ({
+                        particulars: row.querySelector('.item-particulars').innerHTML,
+                        thk: row.querySelector('.item-thk').value,
+                        len: row.querySelector('.item-len').value,
+                        brd: row.querySelector('.item-brd').value,
+                        qty: row.querySelector('.item-qty').value,
+                        sqft: row.querySelector('.item-sqft').textContent,
+                        rate: row.querySelector('.item-rate').value,
+                        amount: row.querySelector('.item-amount').textContent,
+                        dataset: { fixedWeight: row.dataset.fixedWeight || '', density: row.dataset.density || '' }
+                    })),
+                    transportation: Array.from(document.querySelectorAll('.transportation-row')).map(row => ({
+                        dispatch: row.querySelector('.transportation-dispatch').value,
+                        destination: row.querySelector('.transportation-destination').value,
+                        distance: row.querySelector('.transportation-distance').value,
+                        weight: row.querySelector('.transportation-weight').value,
+                        rate: row.querySelector('.transportation-rate').value,
+                        amount: row.querySelector('.transportation-amount').textContent
+                    }))
+                };
+                return data;
+            }
+
+            function restoreProformaData(data) {
+                if (!data) return;
+                invoiceNumberEl.textContent = data.invoiceNumber || '';
+                invoiceDate.value = data.invoiceDate || '';
+                validTill.value = data.validTill || '';
+                incotermsSelect.value = data.incoterms || 'EXW';
+                document.getElementById('clientName').textContent = data.clientName || '';
+                document.getElementById('clientCompany').textContent = data.clientCompany || '';
+                document.getElementById('clientGSTIN').textContent = data.clientGSTIN || '';
+                document.getElementById('billingAddressLine').textContent = data.billingAddressLine || '';
+                billingStateSelect.value = data.billingState || '';
+                handleStateChange(billingStateSelect, billingDistrictSelect);
+                billingDistrictSelect.value = data.billingDistrict || '';
+                document.getElementById('shippingAddressLine').textContent = data.shippingAddressLine || '';
+                shippingStateSelect.value = data.shippingState || '';
+                handleStateChange(shippingStateSelect, shippingDistrictSelect);
+                shippingDistrictSelect.value = data.shippingDistrict || '';
+                gstRateSelect.value = data.gstRate || gstRateSelect.value;
+
+                invoiceItems.innerHTML = '';
+                (data.items || []).forEach((item, idx) => {
+                    const row = createItemRow(idx + 1);
+                    invoiceItems.appendChild(row);
+                    row.querySelector('.item-particulars').innerHTML = item.particulars || '';
+                    row.querySelector('.item-thk').value = item.thk || '';
+                    row.querySelector('.item-len').value = item.len || '';
+                    row.querySelector('.item-brd').value = item.brd || '';
+                    row.querySelector('.item-qty').value = item.qty || '';
+                    row.querySelector('.item-sqft').textContent = item.sqft || '';
+                    row.querySelector('.item-rate').value = item.rate || '';
+                    row.querySelector('.item-amount').textContent = item.amount || '';
+                    if (item.particulars) {
+                        row.querySelector('.item-particulars').style.display = 'block';
+                        row.querySelector('.product-search-input').style.display = 'none';
+                    }
+                    if (item.dataset) {
+                        if (item.dataset.fixedWeight) row.dataset.fixedWeight = item.dataset.fixedWeight;
+                        if (item.dataset.density) row.dataset.density = item.dataset.density;
+                    }
+                });
+                updateSno();
+
+                transportationItems.innerHTML = '';
+                (data.transportation || []).forEach((t, idx) => {
+                    const row = createTransportationRow(idx + 1);
+                    transportationItems.appendChild(row);
+                    row.querySelector('.transportation-dispatch').value = t.dispatch || '';
+                    row.querySelector('.transportation-destination').value = t.destination || '';
+                    row.querySelector('.transportation-distance').value = t.distance || '';
+                    row.querySelector('.transportation-weight').value = t.weight || '';
+                    row.querySelector('.transportation-rate').value = t.rate || '';
+                    row.querySelector('.transportation-amount').textContent = t.amount || '0.00';
+                });
+                updateTransportationSno();
+                if ((data.transportation || []).length > 0) { refreshTransportationUI(); }
+                updateTotals();
+                updateTransportationTotals();
+            }
+
             // Initial item row
             const initialRow = createItemRow(1);
             invoiceItems.appendChild(initialRow);
@@ -786,12 +888,19 @@
                 refreshTransportationUI();
             });
 
-            gstRateSelect.addEventListener('change', updateTotals);
-            transportationGstRateSelect.addEventListener('change', updateTransportationTotals);
+           gstRateSelect.addEventListener('change', updateTotals);
+           transportationGstRateSelect.addEventListener('change', updateTransportationTotals);
 
-            updateTotals();
-            updateTransportationTotals();
-            refreshTransportationUI(); // initial state (also ensures Incoterms matches visibility)
+           updateTotals();
+           updateTransportationTotals();
+           refreshTransportationUI(); // initial state (also ensures Incoterms matches visibility)
+
+            saveToSheetBtn.addEventListener('click', () => {
+                const data = collectProformaData();
+                fetch('/api/proforma', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)})
+                  .then(res => { if(!res.ok) throw new Error(); showMessage('Proforma saved'); })
+                  .catch(() => showMessage('Error saving proforma'));
+            });
 
             // === Modal Logic ===
             const showProductOptionsModal = (products) => {
@@ -1000,6 +1109,9 @@
                 handleStateChange(shippingStateSelect, shippingDistrictSelect);
                 shippingDistrictSelect.value = billingDistrict;
             });
+            if(fileParam){
+                fetch(`/api/proforma/${fileParam}`).then(r=>r.json()).then(restoreProformaData).catch(err=>console.error(err));
+            }
         });
     </script>
     
