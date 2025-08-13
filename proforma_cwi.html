@@ -19,6 +19,7 @@
             display: inline-block; min-width: 50px; border-bottom: 1px dashed #c1d6e1;
             padding: 2px; outline: none; cursor: text; transition: all 0.2s;
         }
+        /* switched teal → brown */
         [contenteditable="true"]:hover, [contenteditable="true"]:focus { border-bottom-color: #5A3B2E; background-color: #f8f4ef; }
         input, select {
             border: 1px solid #c1d6e1; padding: 2px 4px; border-radius: 4px; outline: none;
@@ -35,6 +36,8 @@
             0%, 100% { opacity: 0; transform: translateX(-50%) scale(0.9); }
             10%, 90% { opacity: 1; transform: translateX(-50%) scale(1); }
         }
+        
+        /* A4 Paper Optimization for printing */
         .invoice-container {
             width: 210mm;
             min-height: 297mm;
@@ -43,12 +46,16 @@
             box-shadow: none;
         }
         .invoice-container, body { background-color: white; }
+
+        /* Table Layout for both screen and print */
         .table-container table { table-layout: fixed; width: 100%; }
         .table-container table th { white-space: normal; overflow-wrap: anywhere; }
+
         @media screen {
             .customer-info { display: flex; flex-direction: column; }
             @media (min-width: 768px) { .customer-info { flex-direction: row; } }
         }
+
         @media print {
             @page { size: A4; margin: 34mm 10mm 10mm 10mm; }
             @page:first { margin: 10mm 10mm 10mm 10mm; }
@@ -73,6 +80,8 @@
             .customer-info { display: flex; flex-direction: row; justify-content:space-between; gap:16px; }
             .open-features-btn { display: none !important; }
         }
+
+        /* Modal Styles */
         .modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0, 0, 0, 0.5); display: flex;
@@ -85,14 +94,15 @@
         }
     </style>
     <script>
+        /* brown palette */
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        'primary-dark': '#5A3B2E',
-                        'secondary-accent': '#8B5E3C',
-                        'light-accent': '#C79A6B',
-                        'dark-shade': '#3D271C'
+                        'primary-dark': '#5A3B2E',     // deep walnut
+                        'secondary-accent': '#8B5E3C', // medium wood
+                        'light-accent': '#C79A6B',     // highlight
+                        'dark-shade': '#3D271C'        // text accents
                     }
                 }
             }
@@ -132,6 +142,7 @@
                     <div class="flex justify-between items-center mb-1"><strong class="text-sm font-bold text-primary-dark mr-2">Currency:</strong>
                         <span id="currencyDisplay" class="w-auto text-sm bg-white text-right font-bold">INR (₹)</span>
                     </div>
+                    <!-- Moved Incoterms here -->
                     <div class="flex justify-between items-center"><strong class="text-sm font-bold text-primary-dark mr-2">Incoterms:</strong>
                         <select id="incoterms" class="w-auto text-sm bg-gray-50 border border-gray-300 rounded-md p-1">
                             <option value="EXW" selected>Ex Works (EXW)</option>
@@ -193,6 +204,7 @@
         </section>
 
         <main>
+            <!-- ITEMS TABLE -->
             <div class="table-container">
                 <table class="w-full border-collapse mb-6 bg-gray-50 text-sm rounded-lg overflow-hidden shadow-sm">
                     <thead class="bg-primary-dark text-white text-left">
@@ -236,6 +248,7 @@
                 </table>
             </div>
 
+            <!-- Add Product (+) above Transportation -->
             <div class="no-print mt-2 mb-6 text-right add-remove-buttons">
                 <button id="addItemBtn"
                         class="w-8 h-8 flex items-center justify-center bg-secondary-accent hover:bg-dark-shade text-white font-bold rounded-full shadow-md transition-transform hover:scale-110"
@@ -246,6 +259,7 @@
                 </button>
             </div>
             
+            <!-- TRANSPORTATION -->
             <button id="addTransportationBtn" class="bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg text-sm hover:bg-gray-300 no-print mb-6">
                 Add Transportation
             </button>
@@ -448,8 +462,7 @@
             const messageBox = document.getElementById('message-box');
             const gstRateSelect = document.getElementById('gstRateSelect');
             const invoiceNumberEl = document.getElementById('invoiceNumber');
-            const incotermsSelect = document.getElementById('incoterms'); // <--- Incoterms select
-
+            
             // Transportation
             const addTransportationBtn = document.getElementById('addTransportationBtn');
             const transportationSection = document.getElementById('transportationSection');
@@ -465,6 +478,7 @@
             const saveModalBtn = document.getElementById('saveModalBtn');
             const cancelModalBtn = document.getElementById('cancelModalBtn');
 
+            // --- Date helpers for Valid Till (+15 days) ---
             function addDaysISO(iso, days) {
               if (!iso) return '';
               const d = new Date(iso);
@@ -479,11 +493,15 @@
               validTill.value = addDaysISO(invoiceDate.value, 15);
             }
 
+            // Set today's date and auto-fill Valid Till
             const today = new Date().toISOString().split('T')[0];
             invoiceDate.value = today;
             syncValidTillFromInvoiceDate();
+
+            // When Date changes later, re-auto-fill Valid Till
             invoiceDate.addEventListener('change', syncValidTillFromInvoiceDate);
 
+            // --- Auto-generate PI No (daily increment) ---
             function generatePiNo() {
               const d = new Date();
               const yyyy = d.getFullYear();
@@ -508,6 +526,7 @@
 
             const formatCurrency = (amount) => `₹${parseFloat(amount).toFixed(2)}`;
 
+            // === Totals ===
             const updateTotals = () => {
                 let subtotal = 0;
                 let totalWeight = 0;
@@ -556,23 +575,22 @@
                 updateTotals();
             };
 
-            /* ------- Transportation UI visibility + Incoterms toggle ------- */
+            /* ------- Transportation UI visibility control ------- */
             function refreshTransportationUI(){
                 const hasRows = transportationItems.children.length > 0;
                 if (hasRows){
                     transportationSection.classList.remove('hidden');
-                    addTransportationBtn.classList.add('hidden');
-                    if (incotermsSelect) incotermsSelect.value = "DAP";   // Auto-set to DAP when transport is added
+                    addTransportationBtn.classList.add('hidden');   // HIDE the button
                 } else {
                     transportationSection.classList.add('hidden');
-                    addTransportationBtn.classList.remove('hidden');
+                    addTransportationBtn.classList.remove('hidden'); // SHOW the button again
+                    // also reset totals for transport when removed
                     transportationSubtotalAmount.textContent = formatCurrency(0);
                     transportationTaxAmount.textContent = formatCurrency(0);
-                    if (incotermsSelect) incotermsSelect.value = "EXW";   // Revert to EXW when transport removed
                     updateTotals();
                 }
             }
-            /* --------------------------------------------------------------- */
+            /* ---------------------------------------------------- */
 
             const createItemRow = (sno) => {
                 const tr = document.createElement('tr');
@@ -718,7 +736,7 @@
                     tr.remove();
                     updateTransportationSno();
                     updateTransportationTotals();
-                    refreshTransportationUI();   // shows button again if last row removed + toggles Incoterms back to EXW
+                    refreshTransportationUI();   // <-- show button again if this was the last row
                 });
 
                 return tr;
@@ -737,6 +755,7 @@
                 });
             };
 
+            // Initial item row
             const initialRow = createItemRow(1);
             invoiceItems.appendChild(initialRow);
 
@@ -747,21 +766,21 @@
                 updateSno();
             });
 
-            // Add Transportation: reveal section + add first row if empty
+            // Transportation button reveals section and adds first row if empty
             addTransportationBtn.addEventListener('click', () => {
                 if (transportationItems.children.length === 0) {
                     transportationItems.appendChild(createTransportationRow(1));
                     updateTransportationSno();
                     updateTransportationTotals();
                 }
-                refreshTransportationUI(); // hides button, shows table, sets Incoterms to DAP
+                refreshTransportationUI(); // hide the button & show table
             });
 
             addTransportationItemBtn.addEventListener('click', () => {
                 const newSno = transportationItems.children.length + 1;
                 transportationItems.appendChild(createTransportationRow(newSno));
                 updateTransportationSno();
-                refreshTransportationUI(); // keeps DAP
+                refreshTransportationUI();
             });
 
             gstRateSelect.addEventListener('change', updateTotals);
@@ -769,7 +788,7 @@
 
             updateTotals();
             updateTransportationTotals();
-            refreshTransportationUI();
+            refreshTransportationUI(); // initial state
 
             // === Modal Logic ===
             const showProductOptionsModal = (products) => {
@@ -931,6 +950,7 @@
                 productOptionsModal.classList.add('hidden');
             });
 
+            // States/Districts (sample)
             const statesAndDistricts = { 
                 "Andhra Pradesh": ["Anantapur","Chittoor","East Godavari","Guntur","Krishna","Kurnool","Prakasam","Srikakulam","Sri Potti Sriramulu Nellore","Visakhapatnam","Vizianagaram","West Godavari","Y.S.R. Kadapa"],
                 "Puducherry": ["Karaikal","Mahe","Puducherry","Yanam"]
