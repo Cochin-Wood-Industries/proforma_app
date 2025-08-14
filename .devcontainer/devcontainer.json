@@ -1,0 +1,13 @@
+{
+  "name": "Proforma App",
+  "image": "mcr.microsoft.com/devcontainers/node:18",
+  "forwardPorts": [3000],
+  "postCreateCommand": [
+    "npm install",
+    "echo \"GITHUB_TOKEN=$PROFORMA_PAT\" > .env",
+    "echo \"GITHUB_OWNER=$(echo $GITHUB_REPOSITORY | cut -d/ -f1)\" >> .env",
+    "echo \"GITHUB_REPO=$(echo $GITHUB_REPOSITORY | cut -d/ -f2)\" >> .env",
+    "echo \"GITHUB_BRANCH=$(git rev-parse --abbrev-ref HEAD)\" >> .env"
+  ],
+  "postStartCommand": "npm start"
+}
