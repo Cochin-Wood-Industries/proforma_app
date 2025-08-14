@@ -1,0 +1,18 @@
+{
+  "name": "Proforma App",
+  "image": "mcr.microsoft.com/devcontainers/node:18",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "server",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "containerEnv": {
+    "GITHUB_OWNER": "openai",
+    "GITHUB_REPO": "proforma_app",
+    "GITHUB_BRANCH": "work"
+  },
+  "postCreateCommand": "npm ci || npm install && mkdir -p data/proformas && touch data/proformas/.gitkeep",
+  "postStartCommand": "if [ -n \"$PROFORMA_PAT\" ]; then printf \"GITHUB_TOKEN=%s\\nGITHUB_OWNER=%s\\nGITHUB_REPO=%s\\nGITHUB_BRANCH=%s\\n\" \"$PROFORMA_PAT\" \"$GITHUB_OWNER\" \"$GITHUB_REPO\" \"$GITHUB_BRANCH\" > .env; fi"
+}
