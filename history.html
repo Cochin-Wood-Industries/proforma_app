@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Proforma History</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#0f766e"
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-gray-50 p-6">
+  <div class="max-w-6xl mx-auto bg-white rounded-xl shadow p-6">
+    <h1 class="text-2xl font-bold mb-4">Proforma History</h1>
+    <div class="overflow-x-auto">
+      <table id="historyTable" class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">P.I NO</th>
+            <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Company Name</th>
+            <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Date</th>
+            <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Created At</th>
+            <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Grand Total</th>
+            <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Restore</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200"></tbody>
+      </table>
+    </div>
+  </div>
+  <script>
+    async function loadProformas() {
+      const tbody = document.querySelector("#historyTable tbody");
+      tbody.innerHTML = "";
+      try {
+        const res = await fetch("/proformas");
+        if (!res.ok) throw new Error("Failed to fetch proformas");
+        let data = await res.json();
+        if (!Array.isArray(data)) data = [];
+        data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        for (const p of data) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="px-4 py-2">${p.pino ?? ""}</td>
+            <td class="px-4 py-2">${p.companyName ?? ""}</td>
+            <td class="px-4 py-2">${p.date ?? ""}</td>
+            <td class="px-4 py-2">${p.createdAt ? new Date(p.createdAt).toLocaleString() : ""}</td>
+            <td class="px-4 py-2">${p.grandTotal ?? ""}</td>
+            <td class="px-4 py-2 text-center"><button class="restore-btn text-primary hover:underline" data-pino="${p.pino}">Restore</button></td>`;
+          tbody.appendChild(tr);
+        }
+      } catch (err) {
+        console.error("Failed to load history", err);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadProformas();
+      document.getElementById("historyTable").addEventListener("click", async (e) => {
+        if (e.target && e.target.classList.contains("restore-btn")) {
+          const pi = e.target.dataset.pino;
+          try {
+            const res = await fetch(`/proformas/${encodeURIComponent(pi)}`);
+            if (!res.ok) throw new Error("Failed to fetch proforma");
+            const payload = await res.json();
+            sessionStorage.setItem("proformaRestore", JSON.stringify(payload));
+            window.location.href = "proforma_cwi.html";
+          } catch (err) {
+            console.error("Restore failed", err);
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
