@@ -1,0 +1,17 @@
+{
+  "name": "proforma_app",
+  "version": "1.0.0",
+  "description": "A Proforma app with many features",
+  "main": "index.js",
+  "scripts": {
+    "test": "node -e \"console.log('No tests')\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0"
+  }
+}
