@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Proforma History</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'primary-dark': '#004343',
+            'secondary-accent': '#009a7b',
+            'dark-shade': '#0a5e5e'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-50 text-gray-800 p-4">
+  <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-2xl">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold">Proforma History</h1>
+      <button onclick="window.location.href='index.html'" class="bg-primary-dark text-white font-bold py-2 px-4 rounded-lg hover:bg-dark-shade">← Back</button>
+    </div>
+    <div class="overflow-x-auto">
+      <table id="historyTable" class="min-w-full text-sm border">
+        <thead class="bg-primary-dark text-white">
+          <tr>
+            <th class="py-2 px-3 text-left">P.I NO</th>
+            <th class="py-2 px-3 text-left">Company Name</th>
+            <th class="py-2 px-3 text-left">Date</th>
+            <th class="py-2 px-3 text-left">Created At</th>
+            <th class="py-2 px-3 text-right">Grand Total</th>
+            <th class="py-2 px-3 text-center">Restore</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  <script>
+    function formatDate(iso){
+      const d = new Date(iso);
+      const pad = n => String(n).padStart(2,'0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+    document.addEventListener('DOMContentLoaded',()=>{
+      fetch('/proformas')
+        .then(r=>r.json())
+        .then(rows=>{
+          const tbody=document.querySelector('#historyTable tbody');
+          rows.forEach(row=>{
+            const tr=document.createElement('tr');
+            tr.className='border-b';
+            tr.innerHTML=`
+              <td class="py-2 px-3">${row.pino}</td>
+              <td class="py-2 px-3">${row.companyName||''}</td>
+              <td class="py-2 px-3">${row.date||''}</td>
+              <td class="py-2 px-3">${formatDate(row.createdAt)}</td>
+              <td class="py-2 px-3 text-right">${Number(row.grandTotal||0).toFixed(2)}</td>
+              <td class="py-2 px-3 text-center"><button data-pino="${row.pino}" class="restore-btn bg-secondary-accent text-white px-2 py-1 rounded hover:bg-dark-shade">Restore</button></td>`;
+            tbody.appendChild(tr);
+          });
+        })
+        .catch(()=>{});
+
+      document.getElementById('historyTable').addEventListener('click',e=>{
+        if(e.target.classList.contains('restore-btn')){
+          const pino=e.target.getAttribute('data-pino');
+          fetch('/proformas/'+encodeURIComponent(pino))
+            .then(r=>r.json())
+            .then(data=>{
+              sessionStorage.setItem('proformaRestore', JSON.stringify(data));
+              window.location.href='proforma_cwi.html';
+            })
+            .catch(()=>{});
+        }
+      });
+    });
+  </script>
+</body>
+</html>

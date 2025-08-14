@@ -336,7 +336,7 @@
   <datalist id="product-list"></datalist>
 
   <div class="no-print mt-6 text-center">
-    <button id="saveToSheetBtn" class="bg-secondary-accent text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-dark-shade transition-colors">Save to Google Sheet</button>
+    <button id="saveProformaBtn" class="bg-secondary-accent text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-dark-shade transition-colors">Save</button>
     <button id="printBtn" class="bg-gray-500 text-white font-bold py-2 px-4 ml-4 rounded-lg shadow-md hover:bg-gray-700 transition-colors" onclick="window.print();">Print Invoice</button>
   </div>
 
@@ -410,6 +410,7 @@
       if(invoiceNumberEl && invoiceNumberEl.textContent.trim()===''){ invoiceNumberEl.textContent=generatePiNo(); }
 
       const showMessage=(message,duration=3000)=>{ messageBox.textContent=message; messageBox.style.display='block'; setTimeout(()=>{messageBox.style.display='none';},duration); };
+      window.showMessage=showMessage;
       const formatCurrency=(amount)=>`₹${parseFloat(amount).toFixed(2)}`;
 
       const updateTotals=()=>{
@@ -437,6 +438,7 @@
         grandTotalAmount.textContent=formatCurrency(grandTotal);
         totalWeightAmount.textContent=(totalWeight||0).toFixed(2);
       };
+      window.updateTotals=updateTotals;
 
       const updateTransportationTotals=()=>{
         let tSubtotal=0;
@@ -793,6 +795,96 @@
           .catch(handleError);
       });
     })();
+  </script>
+
+  <script>
+    window.addEventListener('load',()=>{
+      const saveBtn=document.getElementById('saveProformaBtn');
+      const invoiceItems=document.getElementById('invoiceItems');
+
+      // Restore from sessionStorage
+      const restoreData=sessionStorage.getItem('proformaRestore');
+      if(restoreData){
+        try{
+          const data=JSON.parse(restoreData);
+          sessionStorage.removeItem('proformaRestore');
+          document.getElementById('invoiceNumber').textContent=data.pino||'';
+          document.getElementById('invoiceDate').value=data.date||'';
+          document.getElementById('clientName').textContent=data.customer?.name||'';
+          document.getElementById('clientCompany').textContent=data.companyName||'';
+          document.getElementById('clientGSTIN').textContent=data.customer?.gstin||'';
+          document.getElementById('billingAddressLine').textContent=data.customer?.address||'';
+          document.getElementById('billingStateSelect').value=data.customer?.state||'';
+          invoiceItems.innerHTML='';
+          (data.lines||[]).forEach(line=>{
+            document.getElementById('addItemBtn').click();
+            const row=invoiceItems.lastElementChild;
+            const particulars=row.querySelector('.item-particulars');
+            const productInput=row.querySelector('.product-search-input');
+            particulars.innerHTML=`${line.product||''}${line.desc?'<br>'+line.desc.replace(/\n/g,'<br>'):''}`;
+            productInput.value=line.product||'';
+            productInput.style.display='none';
+            particulars.style.display='block';
+            row.querySelector('.item-thk').value=line.thickness||'';
+            row.querySelector('.item-len').value=line.length||'';
+            row.querySelector('.item-brd').value=line.breadth||'';
+            row.querySelector('.item-qty').value=line.qtyUnits||'';
+            row.querySelector('.item-rate').value=line.rate||'';
+            const len=parseFloat(line.length)||0;
+            const brd=parseFloat(line.breadth)||0;
+            const qty=parseFloat(line.qtyUnits)||0;
+            row.querySelector('.item-sqft').textContent=(len*brd*qty).toFixed(2);
+            row.querySelector('.item-amount').textContent=(parseFloat(line.amount)||0).toFixed(2);
+          });
+          document.getElementById('subtotalAmount').textContent=`₹${Number(data.totals?.subtotal||0).toFixed(2)}`;
+          document.getElementById('taxAmount').textContent=`₹${Number(data.totals?.tax||0).toFixed(2)}`;
+          document.getElementById('grandTotalAmount').textContent=`₹${Number(data.totals?.grandTotal||0).toFixed(2)}`;
+          if(typeof window.updateTotals==='function') window.updateTotals();
+        }catch(e){ console.error('restore failed',e); }
+      }
+
+      saveBtn?.addEventListener('click',()=>{
+        try{
+          const payload={
+            pino: document.getElementById('invoiceNumber').textContent.trim(),
+            companyName: document.getElementById('clientCompany').textContent.trim(),
+            date: document.getElementById('invoiceDate').value,
+            createdAt: new Date().toISOString(),
+            customer:{
+              name: document.getElementById('clientName').textContent.trim(),
+              gstin: document.getElementById('clientGSTIN').textContent.trim(),
+              state: document.getElementById('billingStateSelect').value,
+              address: document.getElementById('billingAddressLine').textContent.trim()
+            },
+            lines: Array.from(invoiceItems.querySelectorAll('.item-row')).map(row=>({
+              product: row.querySelector('.product-search-input').value||'',
+              desc: row.querySelector('.item-particulars').innerHTML.replace(/<br>/g,'\n'),
+              thickness: row.querySelector('.item-thk').value,
+              length: row.querySelector('.item-len').value,
+              breadth: row.querySelector('.item-brd').value,
+              qtyUnits: parseFloat(row.querySelector('.item-qty').value)||0,
+              rate: parseFloat(row.querySelector('.item-rate').value)||0,
+              amount: parseFloat(row.querySelector('.item-amount').textContent)||0
+            })),
+            totals:{
+              subtotal: parseFloat(document.getElementById('subtotalAmount').textContent.replace(/[^0-9.-]/g,''))||0,
+              tax: parseFloat(document.getElementById('taxAmount').textContent.replace(/[^0-9.-]/g,''))||0,
+              grandTotal: parseFloat(document.getElementById('grandTotalAmount').textContent.replace(/[^0-9.-]/g,''))||0
+            },
+            notes:'',
+            meta:{createdBy:'',version:1}
+          };
+          fetch('/proformas',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify(payload)
+          })
+          .then(r=>{if(!r.ok) throw new Error('Network'); return r.json();})
+          .then(()=>{ if(window.showMessage) window.showMessage('Saved to GitHub ✓'); })
+          .catch(err=>{ if(window.showMessage) window.showMessage('Save failed'); console.error(err); });
+        }catch(err){ console.error(err); }
+      });
+    });
   </script>
 </body>
 </html>
