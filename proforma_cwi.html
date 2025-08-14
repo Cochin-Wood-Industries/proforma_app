@@ -336,7 +336,8 @@
   <datalist id="product-list"></datalist>
 
   <div class="no-print mt-6 text-center">
-    <button id="saveToSheetBtn" class="bg-secondary-accent text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-dark-shade transition-colors">Save to Google Sheet</button>
+    <button id="saveBtn" class="bg-secondary-accent text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-dark-shade transition-colors">Save</button>
+    <button id="saveToSheetBtn" class="bg-secondary-accent text-white font-bold py-2 px-4 ml-4 rounded-lg shadow-md hover:bg-dark-shade transition-colors">Save to Google Sheet</button>
     <button id="printBtn" class="bg-gray-500 text-white font-bold py-2 px-4 ml-4 rounded-lg shadow-md hover:bg-gray-700 transition-colors" onclick="window.print();">Print Invoice</button>
   </div>
 
@@ -382,6 +383,11 @@
       const gstRateSelect=document.getElementById('gstRateSelect');
       const invoiceNumberEl=document.getElementById('invoiceNumber');
       const incotermsSelect=document.getElementById('incoterms');   /* <-- Incoterms handle */
+      const saveBtn=document.getElementById('saveBtn');
+
+      const restoreDataStr=sessionStorage.getItem('proformaRestore');
+      let restoreData=null;
+      try{ restoreData=restoreDataStr?JSON.parse(restoreDataStr):null; }catch(e){ console.error('Failed to parse restore data',e); }
 
       // Transportation controls
       const addTransportationBtn=document.getElementById('addTransportationBtn');
@@ -403,11 +409,14 @@
       function syncValidTillFromInvoiceDate(){ if(!invoiceDate.value) return; validTill.value=addDaysISO(invoiceDate.value,15); }
 
       const today=new Date().toISOString().split('T')[0];
-      invoiceDate.value=today; syncValidTillFromInvoiceDate();
+      invoiceDate.value=today;
+      syncValidTillFromInvoiceDate();
+      if(restoreData?.date){ invoiceDate.value=restoreData.date; syncValidTillFromInvoiceDate(); }
       invoiceDate.addEventListener('change',syncValidTillFromInvoiceDate);
 
       function generatePiNo(){ const d=new Date(); const yyyy=d.getFullYear(); const mm=String(d.getMonth()+1).padStart(2,'0'); const dd=String(d.getDate()).padStart(2,'0'); const yyyymmdd=`${yyyy}${mm}${dd}`; const key=`piSeq-${yyyymmdd}`; const next=(parseInt(localStorage.getItem(key)||'0',10)+1); localStorage.setItem(key,String(next)); const seq=String(next).padStart(3,'0'); return `CWI-${yyyymmdd}-${seq}`;}
       if(invoiceNumberEl && invoiceNumberEl.textContent.trim()===''){ invoiceNumberEl.textContent=generatePiNo(); }
+      if(restoreData?.pino){ invoiceNumberEl.textContent=restoreData.pino; }
 
       const showMessage=(message,duration=3000)=>{ messageBox.textContent=message; messageBox.style.display='block'; setTimeout(()=>{messageBox.style.display='none';},duration); };
       const formatCurrency=(amount)=>`₹${parseFloat(amount).toFixed(2)}`;
@@ -448,6 +457,44 @@
         transportationSubtotalAmount.textContent=formatCurrency(tSubtotal);
         transportationTaxAmount.textContent=formatCurrency(tTax);
         updateTotals();
+      };
+
+      const collectData=()=>{
+        const lines=Array.from(invoiceItems.querySelectorAll('.item-row')).map(row=>({
+          sno:row.querySelector('td:first-child')?.textContent.trim(),
+          particulars:row.querySelector('.item-particulars')?.innerText.trim(),
+          thk:row.querySelector('.item-thk')?.value,
+          len:row.querySelector('.item-len')?.value,
+          brd:row.querySelector('.item-brd')?.value,
+          qty:row.querySelector('.item-qty')?.value,
+          sqft:row.querySelector('.item-sqft')?.textContent.trim(),
+          rate:row.querySelector('.item-rate')?.value,
+          amount:row.querySelector('.item-amount')?.textContent.trim()
+        }));
+        const data={
+          pino:invoiceNumberEl.textContent.trim(),
+          companyName:'Cochin Wood Industries Private Limited',
+          date:invoiceDate.value,
+          createdAt:new Date().toISOString(),
+          customer:{
+            name:document.getElementById('clientName').textContent.trim(),
+            company:document.getElementById('clientCompany').textContent.trim(),
+            gstin:document.getElementById('clientGSTIN').textContent.trim(),
+            billing:{
+              address:document.getElementById('billingAddressLine').textContent.trim(),
+              district:billingDistrictSelect.value,
+              state:billingStateSelect.value
+            },
+            shipping:{
+              address:document.getElementById('shippingAddressLine').textContent.trim(),
+              district:shippingDistrictSelect.value,
+              state:shippingStateSelect.value
+            }
+          },
+          lines,
+          totals:{grandTotal:parseFloat(grandTotalAmount.textContent.replace(/[^0-9.-]+/g,''))||0}
+        };
+        return data;
       };
 
       /* Show/hide transportation UI AND sync Incoterms */
@@ -582,8 +629,38 @@
         document.querySelectorAll('.transportation-row').forEach((row,idx)=>{ row.querySelector('td:first-child').textContent=idx+1; });
       };
 
-      // Initial item row
-      invoiceItems.appendChild(createItemRow(1));
+      // Initial item rows (possibly restored)
+      if(restoreData?.customer){
+        document.getElementById('clientName').textContent=restoreData.customer.name||'';
+        document.getElementById('clientCompany').textContent=restoreData.customer.company||'';
+        document.getElementById('clientGSTIN').textContent=restoreData.customer.gstin||'';
+        document.getElementById('billingAddressLine').textContent=restoreData.customer.billing?.address||'';
+        billingStateSelect.value=restoreData.customer.billing?.state||'';
+        shippingStateSelect.value=restoreData.customer.shipping?.state||'';
+      }
+
+      const restoreItems=Array.isArray(restoreData?.lines)?restoreData.lines:[];
+      if(restoreItems.length){
+        invoiceItems.innerHTML='';
+        restoreItems.forEach((ln,idx)=>{
+          const tr=createItemRow(idx+1);
+          tr.querySelector('.item-particulars').innerHTML=ln.particulars||'';
+          tr.querySelector('.product-search-input').style.display='none';
+          tr.querySelector('.open-features-btn').classList.add('hidden');
+          tr.querySelector('.item-particulars').style.display='block';
+          tr.querySelector('.item-thk').value=ln.thk||'';
+          tr.querySelector('.item-len').value=ln.len||'';
+          tr.querySelector('.item-brd').value=ln.brd||'';
+          tr.querySelector('.item-qty').value=ln.qty||'';
+          tr.querySelector('.item-sqft').textContent=ln.sqft||'0.00';
+          tr.querySelector('.item-rate').value=ln.rate||'';
+          tr.querySelector('.item-amount').textContent=ln.amount||'0.00';
+          invoiceItems.appendChild(tr);
+        });
+      }else{
+        invoiceItems.appendChild(createItemRow(1));
+      }
+
 
       addItemBtn.addEventListener('click',()=>{
         const newSno=invoiceItems.children.length+1;
@@ -627,9 +704,6 @@
 
       gstRateSelect.addEventListener('change',updateTotals);
       transportationGstRateSelect.addEventListener('change',updateTransportationTotals);
-
-      updateTotals();
-      updateTransportationTotals();
 
       // ==== Modal logic (unchanged core) ====
       const showProductOptionsModal=(products)=>{
@@ -761,6 +835,48 @@
         const st=billingStateSelect.value; const dist=billingDistrictSelect.value;
         document.getElementById('shippingAddressLine').textContent=addr;
         shippingStateSelect.value=st; handleStateChange(shippingStateSelect,shippingDistrictSelect); shippingDistrictSelect.value=dist;
+      });
+
+      if(restoreData){
+        if(restoreData.customer){
+          if(restoreData.customer.billing){
+            billingStateSelect.value=restoreData.customer.billing.state||'';
+            handleStateChange(billingStateSelect,billingDistrictSelect);
+            billingDistrictSelect.value=restoreData.customer.billing.district||'';
+          }
+          if(restoreData.customer.shipping){
+            shippingStateSelect.value=restoreData.customer.shipping.state||'';
+            handleStateChange(shippingStateSelect,shippingDistrictSelect);
+            shippingDistrictSelect.value=restoreData.customer.shipping.district||'';
+          }
+        }
+        if(restoreData.notes){
+          const noteEl=document.getElementById('orderSpecificTandC');
+          const noteLi=document.getElementById('orderSpecificTandC_li');
+          noteEl.textContent=restoreData.notes;
+          noteLi.classList.remove('print-hide-if-empty');
+        }
+        updateTotals();
+        updateTransportationTotals();
+        if(restoreData.totals && restoreData.totals.grandTotal!=null){
+          grandTotalAmount.textContent=formatCurrency(restoreData.totals.grandTotal);
+        }
+        sessionStorage.removeItem('proformaRestore');
+      }else{
+        updateTotals();
+        updateTransportationTotals();
+      }
+
+      saveBtn.addEventListener('click',async()=>{
+        try{
+          const payload=collectData();
+          const resp=await fetch('/proformas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+          if(!resp.ok) throw new Error('Network response was not ok');
+          showMessage('Proforma saved successfully');
+        }catch(err){
+          console.error(err);
+          showMessage('Failed to save proforma');
+        }
       });
     });
   </script>
