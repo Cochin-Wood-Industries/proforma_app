@@ -872,7 +872,7 @@
           const payload=collectData();
           const resp=await fetch('/proformas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
           if(!resp.ok) throw new Error('Network response was not ok');
-          showMessage('Proforma saved successfully');
+          showMessage('Saved to GitHub ✓');
         }catch(err){
           console.error(err);
           showMessage('Failed to save proforma');

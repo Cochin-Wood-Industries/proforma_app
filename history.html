@@ -37,6 +37,13 @@
     </div>
   </div>
   <script>
+    function formatDateTime(iso) {
+      if (!iso) return "";
+      const d = new Date(iso);
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
     async function loadProformas() {
       const tbody = document.querySelector("#historyTable tbody");
       tbody.innerHTML = "";
@@ -52,7 +59,7 @@
             <td class="px-4 py-2">${p.pino ?? ""}</td>
             <td class="px-4 py-2">${p.companyName ?? ""}</td>
             <td class="px-4 py-2">${p.date ?? ""}</td>
-            <td class="px-4 py-2">${p.createdAt ? new Date(p.createdAt).toLocaleString() : ""}</td>
+            <td class="px-4 py-2">${p.createdAt ? formatDateTime(p.createdAt) : ""}</td>
             <td class="px-4 py-2">${p.grandTotal ?? ""}</td>
             <td class="px-4 py-2 text-center"><button class="restore-btn text-primary hover:underline" data-pino="${p.pino}">Restore</button></td>`;
           tbody.appendChild(tr);
