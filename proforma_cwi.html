@@ -251,7 +251,11 @@
           <table class="w-full border-collapse mb-6 bg-gray-50 text-sm rounded-lg overflow-hidden shadow-sm">
             <tfoot>
               <tr class="text-base font-extrabold">
-                <td colspan="8" class="border-t-2 border-primary-dark pt-4 pr-2 text-right">Total Weight (kg)</td>
+                <td colspan="8" class="border-t-2 border-primary-dark pt-4 pr-2 text-right">
+                  Total Qty (Sht): <span id="totalQtySht">0</span> &nbsp;|&nbsp;
+                  Total Qty (SqFt): <span id="totalQtySqft">0.00</span> &nbsp;|&nbsp;
+                  Total Weight (kg)
+                </td>
                 <td id="totalWeightAmount" class="border-t-2 border-primary-dark pt-4 pr-2 text-right">0.00</td>
                 <td class="border-t-2 border-primary-dark pt-4 no-print"></td>
               </tr>
@@ -371,6 +375,8 @@
       const taxAmount=document.getElementById('taxAmount');
       const grandTotalAmount=document.getElementById('grandTotalAmount');
       const totalWeightAmount=document.getElementById('totalWeightAmount');
+      const totalQtyShtEl=document.getElementById('totalQtySht');
+      const totalQtySqftEl=document.getElementById('totalQtySqft');
       const invoiceDate=document.getElementById('invoiceDate');
       const validTill=document.getElementById('validTill');
       const billingStateSelect=document.getElementById('billingStateSelect');
@@ -413,13 +419,16 @@
       const formatCurrency=(amount)=>`₹${parseFloat(amount).toFixed(2)}`;
 
       const updateTotals=()=>{
-        let subtotal=0, totalWeight=0;
+        let subtotal=0, totalWeight=0, totalSheets=0, totalSqft=0;
         document.querySelectorAll('.item-row').forEach(row=>{
           subtotal += parseFloat(row.querySelector('.item-amount').textContent)||0;
           const thk=parseFloat(row.querySelector('.item-thk').value)||0;
           const len=parseFloat(row.querySelector('.item-len').value)||0;
           const brd=parseFloat(row.querySelector('.item-brd').value)||0;
           const qty=parseFloat(row.querySelector('.item-qty').value)||0;
+          const sqft=parseFloat(row.querySelector('.item-sqft').textContent)||0;
+          totalSheets += qty;
+          totalSqft += sqft;
           const selectedName=row.querySelector('.product-search-input')?.value||'';
           const hints=getRowWeightHints(row,selectedName);
           totalWeight += computeRowWeightFromValues(len,brd,thk,qty,hints);
@@ -436,6 +445,9 @@
         const grandTotal=subtotal+tax+transportationSubtotal+transportationTax;
         grandTotalAmount.textContent=formatCurrency(grandTotal);
         totalWeightAmount.textContent=(totalWeight||0).toFixed(2);
+
+        if(totalQtyShtEl) totalQtyShtEl.textContent=(totalSheets||0).toFixed(0);
+        if(totalQtySqftEl) totalQtySqftEl.textContent=(totalSqft||0).toFixed(2);
       };
 
       const updateTransportationTotals=()=>{
